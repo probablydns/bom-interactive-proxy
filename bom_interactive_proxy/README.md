@@ -1,0 +1,20 @@
+# BOM Interactive Proxy (Home Assistant App)
+
+Run BOM Interactive Proxy inside Home Assistant as a custom App/Add-on.
+
+The app exposes:
+
+- `/` full-screen radar map (default)
+- `/map` direct map endpoint (advanced)
+- `/map-only` legacy redirect to `/`
+- `/test-harness` diagnostics page
+- `/health` health check
+
+Install from Home Assistant repository URL:
+
+- `https://github.com/probablydns/bom-interactive-proxy`
+
+For deployment methods, parameter reference, and dashboard card setup, see:
+
+- [README.md](../README.md)
+- [DOCS.md](./DOCS.md)

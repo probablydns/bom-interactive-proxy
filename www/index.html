@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOM Interactive Proxy</title>
+  <style>
+    :root {
+      --bg-0: #eef6f8;
+      --bg-1: #d9edf1;
+      --ink-0: #0f2a31;
+      --ink-1: #23454f;
+      --accent: #0f8c8d;
+      --accent-2: #d96f2d;
+      --panel: #ffffff;
+      --line: #c8dde0;
+      --ok: #1f8a4c;
+      --warn: #915b15;
+      --code: #0c1e23;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Source Sans 3", sans-serif;
+      color: var(--ink-0);
+      background:
+        radial-gradient(1200px 700px at 0% -10%, #ffffff 0%, transparent 55%),
+        linear-gradient(165deg, var(--bg-0), var(--bg-1));
+      min-height: 100vh;
+    }
+
+    .shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2rem 1rem 3rem;
+    }
+
+    .hero {
+      background: linear-gradient(140deg, #ffffff 0%, #e8f5f6 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.25rem 1.25rem 1rem;
+      box-shadow: 0 12px 30px rgba(15, 42, 49, 0.08);
+    }
+
+    .kicker {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-1);
+      background: #e2f2f4;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      margin-bottom: 0.65rem;
+    }
+
+    h1 {
+      margin: 0;
+      line-height: 1.15;
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+    }
+
+    .lede {
+      margin: 0.7rem 0 0;
+      color: var(--ink-1);
+    }
+
+    .grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--ink-0);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--ink-1);
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+
+    .link {
+      text-decoration: none;
+      color: #fff;
+      background: var(--accent);
+      border: 1px solid #0a6e6e;
+      border-radius: 10px;
+      padding: 0.52rem 0.72rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .link.secondary {
+      background: var(--accent-2);
+      border-color: #b55a22;
+    }
+
+    .status {
+      margin-top: 1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+
+    .status h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.18rem 0.46rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      background: #e6f5ec;
+      color: var(--ok);
+      border: 1px solid #c8e7d4;
+    }
+
+    .status p {
+      margin: 0.45rem 0 0;
+      font-size: 0.92rem;
+      color: var(--ink-1);
+    }
+
+    code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      color: #fff;
+      background: var(--code);
+      padding: 0.12rem 0.35rem;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <span class="kicker">BOM Interactive Proxy</span>
+      <h1>Local test entrypoint</h1>
+      <p class="lede">Use the harness first, then embed <code>/map</code> in Home Assistant once checks pass.</p>
+
+      <div class="grid">
+        <article class="card">
+          <h2>Test Harness</h2>
+          <p>Run automated smoke checks and load the interactive map in one page.</p>
+          <a class="link" href="/test-harness">Open /test-harness</a>
+        </article>
+
+        <article class="card">
+          <h2>Interactive Map</h2>
+          <p>Direct map page suitable for iframe embedding.</p>
+          <a class="link secondary" href="/map">Open /map</a>
+        </article>
+
+        <article class="card">
+          <h2>Legacy Debug</h2>
+          <p>Detailed debug page with manual diagnostics.</p>
+          <a class="link" href="/debug-harness">Open /debug-harness</a>
+        </article>
+      </div>
+
+      <div class="status">
+        <h3>Health</h3>
+        <span class="pill">Expected: OK</span>
+        <p>Endpoint: <code>/health</code></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

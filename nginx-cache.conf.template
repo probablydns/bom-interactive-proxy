@@ -1,0 +1,3 @@
+# Rendered by nginx official entrypoint (envsubst).
+# Controls where nginx proxy cache is stored inside the container.
+proxy_cache_path ${NGINX_CACHE_PATH}/bom_tiles levels=1:2 keys_zone=bom_tiles:${NGINX_CACHE_KEYS_ZONE_SIZE} max_size=${NGINX_CACHE_MAX_SIZE} inactive=${NGINX_CACHE_INACTIVE} use_temp_path=off;

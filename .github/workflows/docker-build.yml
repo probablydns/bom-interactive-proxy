@@ -1,0 +1,92 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test image
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          docker run --rm -d --name test-proxy -p 8083:80 "${IMAGE_REF}"
+
+          ok=0
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://localhost:8083/health >/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "❌ Health check failed for ${IMAGE_REF}"
+            docker ps -a || true
+            docker logs test-proxy || true
+            exit 1
+          fi
+
+          docker stop test-proxy
+          echo "✅ Docker image test passed!"
+
+      - name: Update README
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "📦 **Latest build:** \`ghcr.io/${{ env.IMAGE_NAME }}:latest\`" >> BUILD_INFO.md
+          echo "🕒 **Built:** $(date -u)" >> BUILD_INFO.md
+          echo "🔗 **Commit:** ${{ github.sha }}" >> BUILD_INFO.md

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOM Proxy Test Harness</title>
+  <style>
+    :root {
+      --bg-0: #f5faf7;
+      --bg-1: #e4f0ea;
+      --panel: #ffffff;
+      --ink-0: #112b25;
+      --ink-1: #2a4a42;
+      --line: #c8ddd4;
+      --teal: #0b8b7d;
+      --rust: #c4662a;
+      --ok: #1d8a47;
+      --fail: #b5362a;
+      --pending: #8b5a15;
+      --code: #12221f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Source Sans 3", sans-serif;
+      color: var(--ink-0);
+      background:
+        radial-gradient(1200px 700px at 100% -15%, #ffffff 0%, transparent 55%),
+        linear-gradient(160deg, var(--bg-0), var(--bg-1));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #ffffff 0%, #ecf7f2 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: 0 10px 24px rgba(17, 43, 37, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.9rem);
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: 0.55rem 0 0;
+      color: var(--ink-1);
+    }
+
+    .meta {
+      margin-top: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      font-size: 0.86rem;
+      background: #ffffff;
+      color: var(--ink-1);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.7rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.9rem;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .row label {
+      font-weight: 600;
+      color: var(--ink-1);
+      font-size: 0.92rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 260px;
+      border: 1px solid #bdd4cb;
+      border-radius: 10px;
+      padding: 0.5rem 0.6rem;
+      font: inherit;
+      color: var(--ink-0);
+      background: #fbfefd;
+    }
+
+    button {
+      border: 1px solid #0a7268;
+      border-radius: 10px;
+      padding: 0.5rem 0.8rem;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--teal);
+      color: #fff;
+    }
+
+    button.secondary {
+      background: var(--rust);
+      border-color: #a55120;
+    }
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .test-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem;
+      background: var(--panel);
+    }
+
+    .test-card h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 0.45rem;
+      border-radius: 999px;
+      padding: 0.2rem 0.48rem;
+      font-weight: 700;
+      font-size: 0.78rem;
+      border: 1px solid transparent;
+    }
+
+    .status.pending {
+      background: #fff7e8;
+      color: var(--pending);
+      border-color: #f0d9b2;
+    }
+
+    .status.pass {
+      background: #e8f6ed;
+      color: var(--ok);
+      border-color: #bfe4cb;
+    }
+
+    .status.fail {
+      background: #fdeceb;
+      color: var(--fail);
+      border-color: #f2c6c2;
+    }
+
+    .frame-wrap {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .frame-header {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+      color: var(--ink-1);
+      font-size: 0.9rem;
+      background: #f8fdfb;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      border: 0;
+      min-height: 58vh;
+      background: #07100e;
+    }
+
+    .log-wrap {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .log-title {
+      margin: 0;
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--line);
+      background: #f8fdfb;
+      font-size: 0.92rem;
+    }
+
+    .log {
+      margin: 0;
+      padding: 0.8rem;
+      min-height: 140px;
+      max-height: 240px;
+      overflow: auto;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #d6f9eb;
+      background: var(--code);
+      white-space: pre-wrap;
+    }
+
+    code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      color: #fff;
+      background: var(--code);
+      border-radius: 6px;
+      padding: 0.1rem 0.35rem;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>BOM Proxy Test Harness</h1>
+      <p class="lede">Runs local smoke checks and loads the interactive map through this proxy.</p>
+      <div class="meta">
+        <span class="chip">Origin: <code id="originLabel">-</code></span>
+        <span class="chip">Health endpoint: <code>/health</code></span>
+        <span class="chip">Map endpoint: <code>/map</code></span>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="row">
+        <label for="bomPath">BOM Location Path</label>
+        <input id="bomPath" type="text" value="australia/victoria/central/bvic_pt042-melbourne">
+      </div>
+      <div class="row">
+        <button id="runBtn" type="button">Run All Checks</button>
+        <button id="reloadBtn" class="secondary" type="button">Reload Map</button>
+      </div>
+    </section>
+
+    <section class="test-grid">
+      <article class="test-card">
+        <h2>Health</h2>
+        <div id="healthStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>CORS</h2>
+        <div id="corsStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>Map Endpoint</h2>
+        <div id="mapStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>BOM Proxy Path</h2>
+        <div id="proxyStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>Mapping Services</h2>
+        <div id="mappingStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>Location Rewrites</h2>
+        <div id="rewriteStatus" class="status pending">PENDING</div>
+      </article>
+      <article class="test-card">
+        <h2>Map Render</h2>
+        <div id="renderStatus" class="status pending">PENDING</div>
+      </article>
+    </section>
+
+    <section class="frame-wrap">
+      <div class="frame-header">
+        <span>Interactive map frame</span>
+        <code id="frameUrlLabel">/map</code>
+      </div>
+      <iframe id="mapFrame" title="BOM Interactive Map" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </section>
+
+    <section class="log-wrap">
+      <h2 class="log-title">Harness log</h2>
+      <pre id="log" class="log">Starting harness...</pre>
+    </section>
+  </main>
+
+  <script>
+    const statusEls = {
+      health: document.getElementById("healthStatus"),
+      cors: document.getElementById("corsStatus"),
+      map: document.getElementById("mapStatus"),
+      proxy: document.getElementById("proxyStatus"),
+      mapping: document.getElementById("mappingStatus"),
+      rewrite: document.getElementById("rewriteStatus"),
+      render: document.getElementById("renderStatus")
+    };
+
+    const logEl = document.getElementById("log");
+    const frame = document.getElementById("mapFrame");
+    const bomPathInput = document.getElementById("bomPath");
+    const frameUrlLabel = document.getElementById("frameUrlLabel");
+    const originLabel = document.getElementById("originLabel");
+    const runBtn = document.getElementById("runBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    let renderResolver = null;
+    let renderTimer = null;
+
+    originLabel.textContent = window.location.origin;
+
+    function log(message) {
+      const stamp = new Date().toISOString().slice(11, 19);
+      logEl.textContent += `\n[${stamp}] ${message}`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setStatus(name, state, text) {
+      const el = statusEls[name];
+      el.className = `status ${state}`;
+      el.textContent = text;
+    }
+
+    function resetStatuses() {
+      Object.values(statusEls).forEach((el) => {
+        el.className = "status pending";
+        el.textContent = "PENDING";
+      });
+    }
+
+    function completeRenderWatch(ok, message) {
+      if (!renderResolver) {
+        return;
+      }
+
+      clearTimeout(renderTimer);
+      renderTimer = null;
+      const resolve = renderResolver;
+      renderResolver = null;
+
+      if (ok) {
+        setStatus("render", "pass", "PASS");
+      } else {
+        setStatus("render", "fail", "FAIL");
+      }
+      if (message) {
+        log(message);
+      }
+      resolve(ok);
+    }
+
+    function beginRenderWatch(timeoutMs = 35000) {
+      if (renderResolver) {
+        completeRenderWatch(false, "Previous render watch was interrupted by a new load");
+      }
+
+      setStatus("render", "pending", "WAITING");
+      return new Promise((resolve) => {
+        renderResolver = resolve;
+        renderTimer = setTimeout(() => {
+          completeRenderWatch(false, "Map render status timeout");
+        }, timeoutMs);
+      });
+    }
+
+    async function runCheck(name, label, fn) {
+      try {
+        const ok = await fn();
+        if (ok) {
+          setStatus(name, "pass", "PASS");
+          log(`${label}: PASS`);
+          return true;
+        }
+        setStatus(name, "fail", "FAIL");
+        log(`${label}: FAIL`);
+        return false;
+      } catch (error) {
+        setStatus(name, "fail", "FAIL");
+        log(`${label}: FAIL (${error.message})`);
+        return false;
+      }
+    }
+
+    async function checkHealth() {
+      const res = await fetch("/health", { cache: "no-store" });
+      const text = (await res.text()).trim().toUpperCase();
+      return res.ok && text.includes("OK");
+    }
+
+    async function checkCors() {
+      const res = await fetch("/health", { cache: "no-store" });
+      const header = res.headers.get("access-control-allow-origin");
+      return header === "*" || header === window.location.origin;
+    }
+
+    async function checkMapEndpoint() {
+      const res = await fetch("/map", { cache: "no-store" });
+      return res.ok;
+    }
+
+    async function checkProxyPath() {
+      const res = await fetch("/location/australia", { cache: "no-store", redirect: "manual" });
+      return [200, 301, 302].includes(res.status);
+    }
+
+    async function checkMappingServices() {
+      const endpoints = [
+        "/timeseries/wmts?service=WMTS&request=GetCapabilities",
+        "/overlays/forecast_districts/MapServer/0?f=pjson",
+        "/basemaps/basemap_default/MapServer?f=pjson"
+      ];
+
+      for (const endpoint of endpoints) {
+        const res = await fetch(endpoint, { cache: "no-store", redirect: "manual" });
+        if (res.status < 200 || res.status >= 300) {
+          log(`Mapping endpoint failed: ${endpoint} -> HTTP ${res.status}`);
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    async function checkLocationRewrites() {
+      const { bomPath } = buildMapUrl();
+      const res = await fetch(`/location/${bomPath}`, { cache: "no-store" });
+      if (!res.ok) {
+        log(`Location page fetch failed for rewrite check -> HTTP ${res.status}`);
+        return false;
+      }
+
+      const html = await res.text();
+      const hasExternalApiHost =
+        html.includes("https://api.bom.gov.au") ||
+        html.includes("https:\\/\\/api.bom.gov.au") ||
+        html.includes("https://api.test2.bom.gov.au") ||
+        html.includes("https:\\/\\/api.test2.bom.gov.au");
+      const activeExternalTelemetryScriptPattern =
+        /<script[^>]*\ssrc=["']https:\/\/(www\.bom\.gov\.au\/akam\/|apm\.analytics\.bom\.gov\.au|s2?\.go-mpulse\.net\/boomerang\/|www\.googletagmanager\.com|www\.google\.com\/recaptcha\/|www\.gstatic\.com\/recaptcha\/)/i;
+      const hasExternalTelemetryScriptEnabled = activeExternalTelemetryScriptPattern.test(html);
+      const hasMapMainBundle = /<script[^>]*\ssrc=["']\/themes\/custom\/bom_theme\/bom-react\/dist\/main\.bundle\.js/i.test(html);
+      const hasInlineOverride = /<script[^>]*\ssrc=["']\/inject-api-override\.js/i.test(html);
+      if (hasExternalApiHost) {
+        log("Location HTML still includes external api.bom.gov.au host references");
+      }
+      if (hasExternalTelemetryScriptEnabled) {
+        log("Location HTML still includes active external telemetry/anti-bot script sources");
+      }
+      if (!hasMapMainBundle) {
+        log("Location HTML missing required BOM React main bundle script");
+      }
+      if (!hasInlineOverride) {
+        log("Location HTML missing override script reference");
+      }
+
+      return !hasExternalApiHost && !hasExternalTelemetryScriptEnabled && hasMapMainBundle && hasInlineOverride;
+    }
+
+    function buildMapUrl() {
+      const bomPath = bomPathInput.value.trim() || "australia/victoria/central/bvic_pt042-melbourne";
+      const url = `/map?path=${encodeURIComponent(bomPath)}`;
+      return { bomPath, url };
+    }
+
+    function loadMap() {
+      const { bomPath, url } = buildMapUrl();
+      frameUrlLabel.textContent = url;
+      frame.src = url;
+      log(`Map load requested for path: ${bomPath}`);
+    }
+
+    async function runAll() {
+      runBtn.disabled = true;
+      resetStatuses();
+      log("Running checks...");
+
+      const results = await Promise.all([
+        runCheck("health", "Health", checkHealth),
+        runCheck("cors", "CORS", checkCors),
+        runCheck("map", "Map endpoint", checkMapEndpoint),
+        runCheck("proxy", "BOM proxy path", checkProxyPath),
+        runCheck("mapping", "Mapping services", checkMappingServices),
+        runCheck("rewrite", "Location rewrites", checkLocationRewrites)
+      ]);
+
+      const renderWatch = beginRenderWatch();
+      loadMap();
+      const renderOk = await renderWatch;
+      const fullResults = [...results, renderOk];
+      const passed = fullResults.filter(Boolean).length;
+      log(`Checks complete: ${passed}/${fullResults.length} passed`);
+      runBtn.disabled = false;
+    }
+
+    frame.addEventListener("load", () => {
+      log("Map iframe loaded");
+    });
+
+    frame.addEventListener("error", () => {
+      log("Map iframe failed to load");
+      completeRenderWatch(false, "Map iframe failed to load");
+    });
+
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (data.type !== "bom-map-status" || data.source !== "bom-map-page") {
+        return;
+      }
+
+      if (data.status === "loaded") {
+        completeRenderWatch(true, "Map page reported successful load");
+        return;
+      }
+
+      if (data.status === "error") {
+        const detail = data.detail || "Map page reported an unknown error";
+        completeRenderWatch(false, `Map page error: ${detail}`);
+      }
+    });
+
+    runBtn.addEventListener("click", runAll);
+    reloadBtn.addEventListener("click", async () => {
+      const renderWatch = beginRenderWatch();
+      loadMap();
+      await renderWatch;
+    });
+
+    runAll();
+  </script>
+</body>
+</html>

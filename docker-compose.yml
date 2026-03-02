@@ -1,0 +1,22 @@
+services:
+  bom-interactive-proxy:
+    image: ghcr.io/probablydns/bom-interactive-proxy:latest
+    container_name: bom-interactive-proxy
+    ports:
+      - "${HOST_PORT:-8083}:80"
+    environment:
+      - TZ=Australia/Melbourne
+      - NGINX_CACHE_PATH=${CACHE_CONTAINER_PATH:-/tmp/nginx_cache}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Optional: persist nginx cache (customizable host/container paths)
+      - ${CACHE_HOST_PATH:-./cache}:${CACHE_CONTAINER_PATH:-/tmp/nginx_cache}
+    labels:
+      - "com.docker.compose.project=bom-proxy"
+      - "description=BOM Interactive Weather Map Proxy"

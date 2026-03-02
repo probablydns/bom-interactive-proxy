@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BOM Proxy Debug Harness</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .section { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        .log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: scroll; }
+        button { margin: 5px; padding: 10px; }
+        .url { word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>🔧 BOM Proxy Debug Harness</h1>
+    
+    <div class="section">
+        <h3>🧪 Proxy Tests</h3>
+        <button onclick="testProxyHealth()">Test Proxy Health</button>
+        <button onclick="testAPIProxy()">Test API Proxy</button>
+        <button onclick="testSpecificAPI()">Test Specific API Call</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <div class="section">
+        <h3>🌐 Network Monitoring</h3>
+        <button onclick="startNetworkMonitoring()">Start Network Monitoring</button>
+        <button onclick="stopNetworkMonitoring()">Stop Network Monitoring</button>
+        <button onclick="testBOMPage()">Load BOM Page & Monitor</button>
+    </div>
+
+    <div class="section">
+        <h3>🔍 JavaScript Override Tests</h3>
+        <button onclick="testFetchOverride()">Test Fetch Override</button>
+        <button onclick="testXHROverride()">Test XHR Override</button>
+        <button onclick="simulateAPICall()">Simulate Problem API Call</button>
+    </div>
+
+    <div class="section">
+        <h3>📊 Debug Log</h3>
+        <div id="debugLog" class="log"></div>
+    </div>
+
+    <div class="section">
+        <h3>📋 Test Results Summary</h3>
+        <div id="summary"></div>
+    </div>
+
+    <script>
+        let networkMonitor;
+        let testResults = {};
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString().slice(11, 23);
+            const logElement = document.getElementById('debugLog');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('debugLog').innerHTML = '';
+            testResults = {};
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(r => r).length;
+            const failed = total - passed;
+            
+            summary.innerHTML = `
+                <strong>Tests: ${total} | Passed: <span class="success">${passed}</span> | Failed: <span class="error">${failed}</span></strong>
+                ${Object.keys(testResults).length > 0 ? '<br><br>Details:<br>' + 
+                  Object.entries(testResults).map(([test, result]) => 
+                    `• ${test}: <span class="${result ? 'success' : 'error'}">${result ? 'PASS' : 'FAIL'}</span>`
+                  ).join('<br>') : ''}
+            `;
+        }
+
+        async function testProxyHealth() {
+            log('🏥 Testing proxy health...');
+            try {
+                const response = await fetch('/health');
+                const text = await response.text();
+                if (response.ok && text.includes('OK')) {
+                    log('✅ Proxy health: HEALTHY', 'success');
+                    testResults['Proxy Health'] = true;
+                } else {
+                    log('❌ Proxy health: UNHEALTHY - ' + text, 'error');
+                    testResults['Proxy Health'] = false;
+                }
+            } catch (error) {
+                log('❌ Proxy health test failed: ' + error.message, 'error');
+                testResults['Proxy Health'] = false;
+            }
+            updateSummary();
+        }
+
+        async function testAPIProxy() {
+            log('🔗 Testing API proxy routing...');
+            try {
+                const response = await fetch('/apikey/v1/locations');
+                const text = await response.text();
+                log(`API proxy response: ${response.status} - ${text.substring(0, 200)}...`);
+                
+                if (response.status === 404 && text.includes('No Mapping Rule matched')) {
+                    log('✅ API proxy: WORKING (BOM response through proxy)', 'success');
+                    testResults['API Proxy'] = true;
+                } else if (response.status === 403) {
+                    log('❌ API proxy: BLOCKED by BOM', 'error');
+                    testResults['API Proxy'] = false;
+                } else {
+                    log('⚠️ API proxy: Unexpected response', 'warning');
+                    testResults['API Proxy'] = false;
+                }
+            } catch (error) {
+                log('❌ API proxy test failed: ' + error.message, 'error');
+                testResults['API Proxy'] = false;
+            }
+            updateSummary();
+        }
+
+        async function testSpecificAPI() {
+            log('🎯 Testing specific problematic API call...');
+            const apiUrl = '/apikey/v1/locations/places/details/place/o2594692629?filter=nearby_type%3Abom_stn';
+            try {
+                const response = await fetch(apiUrl);
+                const text = await response.text();
+                log(`Specific API call: ${response.status}`);
+                log(`Response preview: ${text.substring(0, 300)}...`);
+                
+                if (response.ok && text.includes('"')) {
+                    log('✅ Specific API call: SUCCESS (JSON data returned)', 'success');
+                    testResults['Specific API'] = true;
+                } else if (response.status === 403) {
+                    log('❌ Specific API call: BLOCKED', 'error');
+                    testResults['Specific API'] = false;
+                } else {
+                    log('⚠️ Specific API call: Unexpected response', 'warning');
+                    testResults['Specific API'] = false;
+                }
+            } catch (error) {
+                log('❌ Specific API test failed: ' + error.message, 'error');
+                testResults['Specific API'] = false;
+            }
+            updateSummary();
+        }
+
+        function startNetworkMonitoring() {
+            log('🔍 Starting comprehensive network monitoring...');
+            
+            // Monitor Performance API
+            if ('PerformanceObserver' in window) {
+                networkMonitor = new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                        const url = entry.name;
+                        if (url.includes('bom.gov.au')) {
+                            const domain = url.includes('localhost') ? 'PROXY' : 'EXTERNAL';
+                            const status = entry.responseStatus || 'unknown';
+                            log(`📡 ${domain}: ${url} (${status})`, domain === 'EXTERNAL' ? 'error' : 'success');
+                        }
+                    }
+                });
+                networkMonitor.observe({entryTypes: ['resource']});
+            }
+            
+            // Monitor fetch calls
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+                if (url && url.includes('bom.gov.au')) {
+                    const domain = url.includes('localhost') ? 'PROXY' : 'EXTERNAL';
+                    log(`🚀 FETCH ${domain}: ${url}`, domain === 'EXTERNAL' ? 'error' : 'success');
+                }
+                return originalFetch.apply(this, args);
+            };
+            
+            log('✅ Network monitoring active', 'success');
+        }
+
+        function stopNetworkMonitoring() {
+            if (networkMonitor) {
+                networkMonitor.disconnect();
+                networkMonitor = null;
+            }
+            log('⏹️ Network monitoring stopped');
+        }
+
+        async function testBOMPage() {
+            log('🌐 Loading BOM page in iframe for monitoring...');
+            const iframe = document.createElement('iframe');
+            iframe.src = '/location/australia/victoria/central/bvic_pt042-melbourne';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.style.opacity = '0';
+            document.body.appendChild(iframe);
+            
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+                log('📊 BOM page test complete - check logs above for network calls');
+            }, 10000);
+        }
+
+        function testFetchOverride() {
+            log('🧪 Testing fetch override...');
+            
+            // Test external API call
+            fetch('https://api.bom.gov.au/test-override')
+                .then(() => log('⚠️ External fetch call went through - override may not be working', 'warning'))
+                .catch(() => log('✅ External fetch blocked/redirected as expected', 'success'));
+                
+            testResults['Fetch Override'] = true;
+            updateSummary();
+        }
+
+        function testXHROverride() {
+            log('🧪 Testing XHR override...');
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://api.bom.gov.au/test-xhr');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    log('XHR test completed with status: ' + xhr.status);
+                }
+            };
+            xhr.send();
+            
+            testResults['XHR Override'] = true;
+            updateSummary();
+        }
+
+        function simulateAPICall() {
+            log('🎯 Simulating the problematic API call pattern...');
+            
+            // This simulates how BOM's JavaScript might be constructing the API calls
+            const baseUrl = 'https://api.bom.gov.au';
+            const apiPath = '/apikey/v1/locations/places/details/place/o2594692629';
+            const fullUrl = baseUrl + apiPath + '?filter=nearby_type%3Abom_stn';
+            
+            log(`Constructed URL: ${fullUrl}`, 'warning');
+            
+            fetch(fullUrl)
+                .then(response => {
+                    log(`Simulated call result: ${response.status}`, response.ok ? 'success' : 'error');
+                })
+                .catch(error => {
+                    log(`Simulated call error: ${error.message}`, 'error');
+                });
+        }
+
+        // Auto-start basic tests
+        window.addEventListener('load', () => {
+            log('🚀 BOM Proxy Debug Harness loaded');
+            log('Run tests using the buttons above to diagnose proxy issues');
+            startNetworkMonitoring();
+        });
+    </script>
+</body>
+</html>
