@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Fix Home Assistant add-on startup loop by adding an explicit `run.sh` entrypoint.
+- Build from HA add-on base and run nginx under s6 instead of relying on a passive image-only Dockerfile.
+- Remove invalid `build_from` key from `config.yaml` and keep add-on metadata schema-compliant.
+
 ## 1.0.1
 
 - Fix Home Assistant add-on build base image selection via explicit `build_from`.
