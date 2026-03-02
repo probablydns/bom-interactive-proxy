@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/probablydns/bom-interactive-proxy:latest
+ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 LABEL \
