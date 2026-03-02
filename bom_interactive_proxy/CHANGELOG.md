@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+- Fix Home Assistant add-on Docker build error by declaring `ARG BUILD_FROM` before all `FROM` instructions.
+
 ## 1.0.2
 
 - Fix Home Assistant add-on startup loop by adding an explicit `run.sh` entrypoint.

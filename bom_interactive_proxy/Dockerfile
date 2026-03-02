@@ -1,6 +1,6 @@
+ARG BUILD_FROM
 FROM ghcr.io/probablydns/bom-interactive-proxy:latest AS upstream
 
-ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 RUN apk add --no-cache nginx gettext curl
