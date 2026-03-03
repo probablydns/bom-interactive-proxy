@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Add custom Home Assistant add-on artwork (`icon.png` and `logo.png`) with weather-radar styling.
+
 ## 1.0.3
 
 - Fix Home Assistant add-on Docker build error by declaring `ARG BUILD_FROM` before all `FROM` instructions.
