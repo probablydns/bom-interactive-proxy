@@ -86,6 +86,7 @@ Use these on `/` (recommended) or `/map`.
 | `zoom` | integer (`0..20`) | none | Target zoom level. |
 | `zoomStart` | integer (`0..20`) | none | Optional initial zoom stage before final zoom. |
 | `showFrameTime` | boolean | `1` | Shows frame counter and timestamp overlay. |
+| `showZoomStatus` | boolean | `1` | Shows "Applying map zoom..." while waiting for zoom settle when `zoom` is used. |
 | `showTownNames` | boolean | `0` | Enables town/city labels layer. |
 | `interactive` | boolean | `0` | Enables drag/pan interactions. |
 | `animate` | boolean | `0` | Enables timeline autoplay behavior. |
@@ -188,6 +189,7 @@ class BomRadarCard extends HTMLElement {
       place: config.place || "melbourne",
       zoom: Number.isFinite(Number(config.zoom)) ? Number(config.zoom) : 9,
       showFrameTime: config.show_frame_time !== false,
+      showZoomStatus: config.show_zoom_status !== false,
       animate: config.animate !== false,
       animateMode: config.animate_mode || "throttle",
       animateInterval: Number.isFinite(Number(config.animate_interval)) ? Number(config.animate_interval) : 2500,
@@ -204,6 +206,7 @@ class BomRadarCard extends HTMLElement {
       place: this.config.place,
       zoom: String(this.config.zoom),
       showFrameTime: this.config.showFrameTime ? "1" : "0",
+      showZoomStatus: this.config.showZoomStatus ? "1" : "0",
       animate: this.config.animate ? "1" : "0",
       animateMode: this.config.animateMode,
       animateInterval: String(this.config.animateInterval),

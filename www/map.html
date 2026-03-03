@@ -109,6 +109,7 @@
                 this.maxTownLayerEnableAttempts = 60;
                 this.forceRain = false;
                 this.showFrameTime = false;
+                this.showZoomStatus = true;
                 this.animate = true;
                 this.lowPower = false;
                 this.animateMode = 'native';
@@ -228,6 +229,7 @@
                     const animateIntervalParam = params.get('animateInterval');
                     const frameSkipParam = params.get('frameSkip');
                     const showFrameTimeParam = params.get('showFrameTime');
+                    const showZoomStatusParam = params.get('showZoomStatus');
                     const showTownNamesParam = params.get('showTownNames');
                     const interactiveParam = params.get('interactive');
                     const zoomStartParam = params.get('zoomStart');
@@ -238,6 +240,10 @@
                         showFrameTimeParam === null
                             ? mapOnly
                             : !['0', 'false', 'off', 'no'].includes(String(showFrameTimeParam).trim().toLowerCase());
+                    const showZoomStatus =
+                        showZoomStatusParam === null
+                            ? true
+                            : !['0', 'false', 'off', 'no'].includes(String(showZoomStatusParam).trim().toLowerCase());
                     const showTownNames =
                         showTownNamesParam !== null &&
                         !['0', 'false', 'off', 'no'].includes(String(showTownNamesParam).trim().toLowerCase());
@@ -263,6 +269,7 @@
                     this.forceRain = rain || mapOnly;
                     this.lowPower = lowPower;
                     this.showFrameTime = lowPower ? false : showFrameTime;
+                    this.showZoomStatus = showZoomStatus;
                     this.animate = lowPower ? false : animate;
                     this.animateMode = animateMode;
                     this.animateIntervalMs = animateIntervalMs;
@@ -1505,7 +1512,7 @@
                 this.hideMapFrameWhileZooming();
                 if (this.deferRevealUntilZoomSettled) {
                     const loadingMessage = this.loading.querySelector('div:last-child');
-                    if (loadingMessage) {
+                    if (this.showZoomStatus && loadingMessage) {
                         loadingMessage.textContent = 'Applying map zoom...';
                     }
                     this.startZoomRevealPoll();
