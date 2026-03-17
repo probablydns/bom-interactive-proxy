@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOM Interactive Weather Map</title>
+    <script src="app-config.js"></script>
     <style>
         * {
             margin: 0;
@@ -115,7 +116,9 @@
                 this.animateMode = 'native';
                 this.animateIntervalMs = 2000;
                 this.frameSkip = 1;
-                this.displayTimeZone = 'Australia/Melbourne';
+                this.displayTimeZone =
+                    (window.BOM_PROXY_CONFIG && window.BOM_PROXY_CONFIG.displayTimeZone) ||
+                    'Australia/Melbourne';
                 this.maxRadarTimestampAgeMs = 8 * 60 * 60 * 1000;
                 this.maxRadarFutureSkewMs = 20 * 60 * 1000;
                 this.throttledAnimationTimer = null;
@@ -180,6 +183,26 @@
                 this.init();
             }
 
+            getAppBasePath() {
+                const path = String(window.location.pathname || '');
+                const marker = '/location/';
+                const locationIndex = path.indexOf(marker);
+                if (locationIndex >= 0) {
+                    return path.slice(0, locationIndex + 1) || '/';
+                }
+
+                if (path.endsWith('/map') || path.endsWith('/index.html')) {
+                    return path.replace(/(?:\/map|\/index\.html)$/, '/') || '/';
+                }
+
+                return path.endsWith('/') ? path : `${path}/`;
+            }
+
+            buildAppUrl(relativePath) {
+                const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
+                return new URL(normalizedPath, `${window.location.origin}${this.getAppBasePath()}`).toString();
+            }
+
             notifyParent(status, detail = '') {
                 if (!window.parent || window.parent === window) {
                     return;
@@ -200,7 +223,10 @@
                 }
 
                 try {
-                    const registration = await navigator.serviceWorker.register('/map-sw.js', { scope: '/' });
+                    const registration = await navigator.serviceWorker.register(
+                        this.buildAppUrl('map-sw.js'),
+                        { scope: this.getAppBasePath() }
+                    );
                     if (registration && registration.waiting) {
                         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                     }
@@ -321,8 +347,8 @@
                         locationParams.set('showTownNames', '1');
                     }
                     const bomUrl = locationParams.toString()
-                        ? `/location/${bomPath}?${locationParams.toString()}`
-                        : `/location/${bomPath}`;
+                        ? this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`)
+                        : this.buildAppUrl(`location/${bomPath}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
                     
@@ -924,7 +950,7 @@
                     const townLayer = new FeatureLayerCtor({
                         id: 'bom-town-labels-override',
                         title: 'Towns and cities',
-                        url: '/overlays/towns_and_cities/FeatureServer/3',
+                        url: this.buildAppUrl('overlays/towns_and_cities/FeatureServer/3'),
                         outFields: ['NAME', 'MIN_ZOOM_LVL'],
                         legendEnabled: false,
                         listMode: 'hide',
@@ -1013,7 +1039,7 @@
                 }
 
                 try {
-                    const details = await this.fetchJSON(`/apikey/v1/locations/places/details/place/${encodeURIComponent(place.id)}`);
+                    const details = await this.fetchJSON(this.buildAppUrl(`apikey/v1/locations/places/details/place/${encodeURIComponent(place.id)}`));
                     if (details && details.place) {
                         return details.place;
                     }
@@ -1138,7 +1164,7 @@
                     }
 
                     const lookupUrl =
-                        `/apikey/v1/locations/places/autocomplete?name=${encodeURIComponent(lookupName)}&limit=8&website-sort=true`;
+                        this.buildAppUrl(`apikey/v1/locations/places/autocomplete?name=${encodeURIComponent(lookupName)}&limit=8&website-sort=true`);
                     const data = await this.fetchJSON(lookupUrl);
                     const candidates = Array.isArray(data && data.candidates) ? data.candidates : [];
                     if (!candidates.length) {
@@ -1164,7 +1190,7 @@
                     const coordinate = encodeURIComponent(`"${coords.lon},${coords.lat}"`);
                     const filter = encodeURIComponent('type:place');
                     const lookupUrl =
-                        `/apikey/v1/locations/places/search?coordinate=${coordinate}&filter=${filter}&radius=50000&website-sort=true`;
+                        this.buildAppUrl(`apikey/v1/locations/places/search?coordinate=${coordinate}&filter=${filter}&radius=50000&website-sort=true`);
                     const data = await this.fetchJSON(lookupUrl);
                     if (!data || !data.place) {
                         return null;
@@ -1306,7 +1332,7 @@
             }
 
             async resolveRadarFrameMetadata() {
-                const capabilitiesUrl = '/timeseries/wmts?service=WMTS&request=GetCapabilities';
+                const capabilitiesUrl = this.buildAppUrl('timeseries/wmts?service=WMTS&request=GetCapabilities');
                 try {
                     const response = await fetch(capabilitiesUrl, {
                         cache: 'no-store',
@@ -2057,8 +2083,8 @@
                         const parsed = new URL(rawHref, baseHref);
                         const pathname = String(parsed.pathname || '').toLowerCase();
                         return (
-                            pathname === '/apikey/v1/locations/places/search' ||
-                            pathname.startsWith('/apikey/v1/observations/recent/')
+                            pathname.endsWith('/apikey/v1/locations/places/search') ||
+                            pathname.includes('/apikey/v1/observations/recent/')
                         );
                     } catch (error) {
                         return false;

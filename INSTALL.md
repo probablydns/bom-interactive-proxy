@@ -16,6 +16,12 @@ Default URLs:
 - `http://HOME_ASSISTANT_HOST:8083/health`
 - `http://HOME_ASSISTANT_HOST:8083/test-harness`
 
+Ingress:
+
+- Open the add-on from the Home Assistant sidebar or add-on page.
+- Home Assistant Cloud access should use ingress rather than the raw port.
+- Set `display_timezone` in the add-on options if you want something other than `Australia/Melbourne`.
+
 ## Docker Deployment
 
 ### Method 1: Prebuilt image (`docker run`)
@@ -24,7 +30,7 @@ Default URLs:
 docker run -d \
   --name bom-interactive-proxy \
   -p 8083:80 \
-  -e TIMEZONE=Australia/Melbourne \
+  -e DISPLAY_TIMEZONE=Australia/Sydney \
   -e NGINX_CACHE_PATH=/var/cache/bom \
   -v /your/host/cache/path:/var/cache/bom \
   --restart unless-stopped \
@@ -41,7 +47,7 @@ services:
     ports:
       - "8083:80"
     environment:
-      - TIMEZONE=Australia/Melbourne
+      - DISPLAY_TIMEZONE=Australia/Sydney
       - NGINX_CACHE_PATH=/var/cache/bom
       - NGINX_CACHE_INACTIVE=24h
       - NGINX_CACHE_MAX_SIZE=2g
@@ -57,7 +63,7 @@ git clone https://github.com/probablydns/bom-interactive-proxy.git
 cd bom-interactive-proxy
 docker build -t bom-interactive-proxy:local .
 docker rm -f bom-interactive-proxy 2>/dev/null || true
-docker run -d --name bom-interactive-proxy -p 8083:80 -e TIMEZONE=Australia/Melbourne bom-interactive-proxy:local
+docker run -d --name bom-interactive-proxy -p 8083:80 -e DISPLAY_TIMEZONE=Australia/Sydney bom-interactive-proxy:local
 ```
 
 ## Verify Service
@@ -75,21 +81,24 @@ curl -f http://localhost:8083/health
 - `http://HOST:8083/?path=australia/new-south-wales/metropolitan/bnsw_pt131-sydney&zoom=9`
 - `http://HOST:8083/?place=richmond,vic&zoom=12`
 
-## Home Assistant Dashboard Card
+## Remote Access
 
-### Built-in iframe card
+### Home Assistant Cloud
 
-```yaml
-type: iframe
-url: http://HOME_ASSISTANT_HOST:8083/?place=melbourne&showFrameTime=1&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1
-aspect_ratio: 100%
-```
+Use Home Assistant ingress. Do not rely on the raw `8083` port for the Home Assistant Cloud sidebar experience.
 
-For a custom card implementation, use the root `README.md` section **Home Assistant Dashboard Card**.
+### `cloudflared` add-on
+
+You can either:
+
+- expose Home Assistant and reach this app through ingress, or
+- publish a separate hostname to `http://HOME_ASSISTANT_HOST:8083`
+
+Ingress is preferred if you want the app to behave like a native Home Assistant panel.
 
 ## Notes
 
 - `/map-only` is a legacy redirect; use `/` in new links.
-- Timezone query overrides are not supported. Set timezone with container/app environment (`TIMEZONE`).
+- Timezone query overrides are not supported. Use the add-on `display_timezone` option or Docker `DISPLAY_TIMEZONE` env var. The default is `Australia/Melbourne`.
 - If port `8083` is in use, change host port mapping.
 - For full parameter behavior (including `lowPower`, `rain`, and `cleanup`), see `README.md`.

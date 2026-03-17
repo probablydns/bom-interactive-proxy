@@ -403,33 +403,37 @@
       }
     }
 
+    function appUrl(path) {
+      return new URL(String(path || "").replace(/^\/+/, ""), window.location.href.endsWith("/") ? window.location.href : `${window.location.href.replace(/[#?].*$/, "").replace(/[^/]*$/, "")}`).toString();
+    }
+
     async function checkHealth() {
-      const res = await fetch("/health", { cache: "no-store" });
+      const res = await fetch(appUrl("/health"), { cache: "no-store" });
       const text = (await res.text()).trim().toUpperCase();
       return res.ok && text.includes("OK");
     }
 
     async function checkCors() {
-      const res = await fetch("/health", { cache: "no-store" });
+      const res = await fetch(appUrl("/health"), { cache: "no-store" });
       const header = res.headers.get("access-control-allow-origin");
       return header === "*" || header === window.location.origin;
     }
 
     async function checkMapEndpoint() {
-      const res = await fetch("/map", { cache: "no-store" });
+      const res = await fetch(appUrl("/map"), { cache: "no-store" });
       return res.ok;
     }
 
     async function checkProxyPath() {
-      const res = await fetch("/location/australia", { cache: "no-store", redirect: "manual" });
+      const res = await fetch(appUrl("/location/australia"), { cache: "no-store", redirect: "manual" });
       return [200, 301, 302].includes(res.status);
     }
 
     async function checkMappingServices() {
       const endpoints = [
-        "/timeseries/wmts?service=WMTS&request=GetCapabilities",
-        "/overlays/forecast_districts/MapServer/0?f=pjson",
-        "/basemaps/basemap_default/MapServer?f=pjson"
+        appUrl("/timeseries/wmts?service=WMTS&request=GetCapabilities"),
+        appUrl("/overlays/forecast_districts/MapServer/0?f=pjson"),
+        appUrl("/basemaps/basemap_default/MapServer?f=pjson")
       ];
 
       for (const endpoint of endpoints) {
@@ -445,7 +449,7 @@
 
     async function checkLocationRewrites() {
       const { bomPath } = buildMapUrl();
-      const res = await fetch(`/location/${bomPath}`, { cache: "no-store" });
+      const res = await fetch(appUrl(`/location/${bomPath}`), { cache: "no-store" });
       if (!res.ok) {
         log(`Location page fetch failed for rewrite check -> HTTP ${res.status}`);
         return false;
@@ -460,8 +464,8 @@
       const activeExternalTelemetryScriptPattern =
         /<script[^>]*\ssrc=["']https:\/\/(www\.bom\.gov\.au\/akam\/|apm\.analytics\.bom\.gov\.au|s2?\.go-mpulse\.net\/boomerang\/|www\.googletagmanager\.com|www\.google\.com\/recaptcha\/|www\.gstatic\.com\/recaptcha\/)/i;
       const hasExternalTelemetryScriptEnabled = activeExternalTelemetryScriptPattern.test(html);
-      const hasMapMainBundle = /<script[^>]*\ssrc=["']\/themes\/custom\/bom_theme\/bom-react\/dist\/main\.bundle\.js/i.test(html);
-      const hasInlineOverride = /<script[^>]*\ssrc=["']\/inject-api-override\.js/i.test(html);
+      const hasMapMainBundle = /<script[^>]*\ssrc=["'][^"']*\/themes\/custom\/bom_theme\/bom-react\/dist\/main\.bundle\.js/i.test(html);
+      const hasInlineOverride = /<script[^>]*\ssrc=["'][^"']*\/inject-api-override\.js/i.test(html);
       if (hasExternalApiHost) {
         log("Location HTML still includes external api.bom.gov.au host references");
       }
@@ -480,7 +484,7 @@
 
     function buildMapUrl() {
       const bomPath = bomPathInput.value.trim() || "australia/victoria/central/bvic_pt042-melbourne";
-      const url = `/map?path=${encodeURIComponent(bomPath)}`;
+      const url = appUrl(`/map?path=${encodeURIComponent(bomPath)}`);
       return { bomPath, url };
     }
 

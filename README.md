@@ -36,7 +36,6 @@ Interactive BOM weather map proxy for local browser use, Home Assistant dashboar
 docker run -d \
   --name bom-interactive-proxy \
   -p 8083:80 \
-  -e TIMEZONE=Australia/Melbourne \
   -e NGINX_CACHE_PATH=/var/cache/bom \
   -e NGINX_CACHE_INACTIVE=24h \
   -e NGINX_CACHE_MAX_SIZE=2g \
@@ -55,7 +54,6 @@ services:
     ports:
       - "8083:80"
     environment:
-      - TIMEZONE=Australia/Melbourne
       - NGINX_CACHE_PATH=/var/cache/bom
       - NGINX_CACHE_INACTIVE=24h
       - NGINX_CACHE_MAX_SIZE=2g
@@ -71,7 +69,7 @@ git clone https://github.com/probablydns/bom-interactive-proxy.git
 cd bom-interactive-proxy
 docker build -t bom-interactive-proxy:local .
 docker rm -f bom-interactive-proxy 2>/dev/null || true
-docker run -d --name bom-interactive-proxy -p 8083:80 -e TIMEZONE=Australia/Melbourne bom-interactive-proxy:local
+docker run -d --name bom-interactive-proxy -p 8083:80 bom-interactive-proxy:local
 ```
 
 ## URL Parameters (Canonical)
@@ -102,7 +100,7 @@ Advanced/internal flags (usually not needed on `/`):
 - `rain=1` forces rain-tab workflow.
 - `cleanup=1` forces repeated page chrome cleanup.
 
-Timezone is fixed to `Australia/Melbourne` in the app. Query-string timezone override is not supported.
+Runtime timezone defaults to `Australia/Melbourne` and can now be overridden with the add-on `display_timezone` option or the Docker `DISPLAY_TIMEZONE` environment variable. Query-string timezone override is not supported.
 
 ## Behavior Notes
 
@@ -169,68 +167,32 @@ State values accepted in `place` suffix:
 - `http://HOST:8083/?path=australia/new-south-wales/metropolitan/bnsw_pt131-sydney&zoom=9`
 - `http://HOST:8083/?place=melbourne&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1`
 
-## Home Assistant Dashboard Card
+## Home Assistant Access
 
-### Built-in iframe card
+### Add-on network port
 
-```yaml
-type: iframe
-url: http://HOME_ASSISTANT_HOST:8083/?place=melbourne&showFrameTime=1&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1
-aspect_ratio: 100%
-```
+The add-on still exposes port `8083` by default:
 
-### Custom card skeleton (`/config/www/bom-radar-card.js`)
+- `http://HOME_ASSISTANT_HOST:8083/`
+- `http://HOME_ASSISTANT_HOST:8083/health`
+- `http://HOME_ASSISTANT_HOST:8083/test-harness`
 
-```javascript
-class BomRadarCard extends HTMLElement {
-  setConfig(config) {
-    this.config = {
-      host: config.host || window.location.origin,
-      place: config.place || "melbourne",
-      zoom: Number.isFinite(Number(config.zoom)) ? Number(config.zoom) : 9,
-      showFrameTime: config.show_frame_time !== false,
-      showZoomStatus: config.show_zoom_status !== false,
-      animate: config.animate !== false,
-      animateMode: config.animate_mode || "throttle",
-      animateInterval: Number.isFinite(Number(config.animate_interval)) ? Number(config.animate_interval) : 2500,
-      frameSkip: Number.isFinite(Number(config.frame_skip)) ? Number(config.frame_skip) : 1,
-      interactive: config.interactive === true,
-      height: config.height || "480px"
-    };
-    this.render();
-  }
+### Home Assistant ingress and Home Assistant Cloud
 
-  render() {
-    if (!this.config) return;
-    const p = new URLSearchParams({
-      place: this.config.place,
-      zoom: String(this.config.zoom),
-      showFrameTime: this.config.showFrameTime ? "1" : "0",
-      showZoomStatus: this.config.showZoomStatus ? "1" : "0",
-      animate: this.config.animate ? "1" : "0",
-      animateMode: this.config.animateMode,
-      animateInterval: String(this.config.animateInterval),
-      frameSkip: String(this.config.frameSkip),
-      interactive: this.config.interactive ? "1" : "0"
-    });
+The add-on now supports Home Assistant ingress. That is the correct route if you want it to behave like built-in sidebar apps such as VS Code.
 
-    const src = `${this.config.host.replace(/\/$/, "")}/?${p.toString()}`;
-    this.innerHTML = `<ha-card header="BOM Radar"><iframe src="${src}" style="width:100%;height:${this.config.height};border:0;"></iframe></ha-card>`;
-  }
+- Open the add-on from the Home Assistant sidebar or add-on page.
+- If Home Assistant Cloud is enabled, ingress is the path that can be exposed through the Home Assistant UI.
+- Ingress keeps the app under Home Assistant auth instead of exposing a separate raw port.
 
-  getCardSize() {
-    return 6;
-  }
-}
+### `cloudflared` add-on
 
-customElements.define("bom-radar-card", BomRadarCard);
-```
+If you use the `cloudflared` add-on, expose either:
 
-Resource registration in Home Assistant:
+- Home Assistant itself, then access this add-on through Home Assistant ingress, or
+- A dedicated public hostname that points to `http://HOME_ASSISTANT_HOST:8083`
 
-1. **Settings -> Dashboards -> Resources -> Add Resource**
-2. URL: `/local/bom-radar-card.js`
-3. Type: `JavaScript Module`
+Using ingress is the closer match to the VS Code add-on experience. Exposing port `8083` directly is still valid, but it is a separate app endpoint rather than a Home Assistant-native panel.
 
 ## Cache Management
 

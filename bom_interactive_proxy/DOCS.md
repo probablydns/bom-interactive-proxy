@@ -13,6 +13,8 @@
 - Main URL: `http://HOME_ASSISTANT_HOST:8083/`
 - Health check: `http://HOME_ASSISTANT_HOST:8083/health`
 - Test harness: `http://HOME_ASSISTANT_HOST:8083/test-harness`
+- Ingress: open the add-on from the Home Assistant sidebar or add-on page
+- Timezone option: set `display_timezone` in the add-on configuration to override the default `Australia/Melbourne`
 
 If port `8083` is in use, change it in app Network settings.
 
@@ -31,19 +33,20 @@ If port `8083` is in use, change it in app Network settings.
 - Duplicate suburb disambiguation:
   - `/?place=richmond,vic&zoom=12`
 
-## Dashboard Card
+## Remote Access
 
-### Built-in iframe card
+### Home Assistant Cloud
 
-```yaml
-type: iframe
-url: http://HOME_ASSISTANT_HOST:8083/?place=melbourne&showFrameTime=1&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1
-aspect_ratio: 100%
-```
+Use Home Assistant ingress if you want this add-on to behave like other Home Assistant sidebar apps.
 
-### Custom card
+### `cloudflared` add-on
 
-Use the root `README.md` section **Home Assistant Dashboard Card** for the full custom-card JS and YAML example.
+You can publish either:
+
+- Home Assistant itself and then use ingress for this add-on, or
+- a dedicated hostname to the raw add-on port
+
+Ingress is preferred for the Home Assistant-native experience.
 
 ## Notes
 
@@ -51,4 +54,4 @@ Use the root `README.md` section **Home Assistant Dashboard Card** for the full 
 - `lowPower=1` disables animation and frame-time overlay to reduce load.
 - `animateMode=native` uses BOM playback; `animateMode=throttle` steps frames at fixed intervals.
 - `rain` and `cleanup` are internal controls already enabled by default on `/`.
-- Timezone query overrides are disabled; timezone is fixed in-app (`Australia/Melbourne`).
+- Timezone query overrides are disabled. Use the add-on `display_timezone` option; default is `Australia/Melbourne`.

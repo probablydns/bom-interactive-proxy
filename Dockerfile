@@ -9,6 +9,7 @@ ENV NGINX_CACHE_PATH=/tmp/nginx_cache
 ENV NGINX_CACHE_KEYS_ZONE_SIZE=64m
 ENV NGINX_CACHE_MAX_SIZE=2g
 ENV NGINX_CACHE_INACTIVE=24h
+ENV DISPLAY_TIMEZONE=Australia/Melbourne
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
