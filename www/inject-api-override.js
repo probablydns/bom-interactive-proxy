@@ -27,6 +27,7 @@
 
   function rewriteLocalAssetUrl(url) {
     var src = String(url || "");
+    var appBasePath = getAppBasePath();
     if (!src) {
       return src;
     }
@@ -36,12 +37,18 @@
     }
 
     if (src.charAt(0) === "/") {
+      if (appBasePath !== "/" && src.indexOf(appBasePath) === 0) {
+        return src;
+      }
       return buildAppUrl(src);
     }
 
     try {
       var parsed = new URL(src, window.location.href);
       if (parsed.origin === window.location.origin && parsed.pathname.charAt(0) === "/") {
+        if (appBasePath !== "/" && parsed.pathname.indexOf(appBasePath) === 0) {
+          return src;
+        }
         return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
       }
     } catch (_error) {
