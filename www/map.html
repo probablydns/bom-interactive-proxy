@@ -221,7 +221,10 @@
                 }
 
                 try {
-                    const registration = await navigator.serviceWorker.register('/map-sw.js', { scope: '/' });
+                    const registration = await navigator.serviceWorker.register(
+                        this.buildAppUrl('map-sw.js'),
+                        { scope: this.getAppBasePath() }
+                    );
                     if (registration && registration.waiting) {
                         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                     }
@@ -239,7 +242,10 @@
                     // Get location from URL parameters or default to Melbourne
                     const params = new URLSearchParams(window.location.search);
                     const pathName = String(window.location.pathname || '').toLowerCase();
-                    const isRootEntryPoint = pathName === '/' || pathName === '/index.html';
+                    const isRootEntryPoint =
+                        pathName === '/' ||
+                        pathName === '/index.html' ||
+                        /^\/api\/hassio_ingress\/[^/]+\/?$/.test(pathName);
                     const bomPath = await this.resolveLocationPath(params);
                     const cleanup = params.get('cleanup') === '1';
                     const mapOnly = params.get('mapOnly') === '1' || isRootEntryPoint;
@@ -341,7 +347,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260319r1');
+                    locationParams.set('_proxyv', '20260319r2');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -944,7 +950,7 @@
                     const townLayer = new FeatureLayerCtor({
                         id: 'bom-town-labels-override',
                         title: 'Towns and cities',
-                        url: '/overlays/towns_and_cities/FeatureServer/3',
+                        url: this.buildAppUrl('overlays/towns_and_cities/FeatureServer/3'),
                         outFields: ['NAME', 'MIN_ZOOM_LVL'],
                         legendEnabled: false,
                         listMode: 'hide',
@@ -1016,7 +1022,7 @@
             }
 
             async fetchJSON(url) {
-                const response = await fetch(url, { credentials: 'same-origin' });
+                const response = await fetch(this.buildAppUrl(url), { credentials: 'same-origin' });
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status} for ${url}`);
                 }
@@ -1326,7 +1332,7 @@
             }
 
             async resolveRadarFrameMetadata() {
-                const capabilitiesUrl = '/timeseries/wmts?service=WMTS&request=GetCapabilities';
+                const capabilitiesUrl = this.buildAppUrl('timeseries/wmts?service=WMTS&request=GetCapabilities');
                 try {
                     const response = await fetch(capabilitiesUrl, {
                         cache: 'no-store',

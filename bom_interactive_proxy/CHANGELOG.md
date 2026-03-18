@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.27
+
+- Fix wrapper-side ingress requests that were still escaping to Home Assistant root for place lookup, WMTS metadata, town overlays, and service worker registration.
+- Refresh ingress cache-busters to `20260319r2`.
+
 ## 1.0.26
 
 - Reset the ingress implementation onto the stable `79a9112` wrapper baseline.
