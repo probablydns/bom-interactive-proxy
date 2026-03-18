@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.28
+
+- Enable Home Assistant ingress in add-on metadata and remove the raw `webui` override so `Open Web UI` uses ingress instead of `:8083`.
+
 ## 1.0.27
 
 - Fix wrapper-side ingress requests that were still escaping to Home Assistant root for place lookup, WMTS metadata, town overlays, and service worker registration.
