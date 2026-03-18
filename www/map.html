@@ -351,9 +351,8 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    const bomUrl = locationParams.toString()
-                        ? this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`)
-                        : this.buildAppUrl(`location/${bomPath}`);
+                    locationParams.set('_proxyv', '20260318e');
+                    const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
                     
