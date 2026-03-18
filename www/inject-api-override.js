@@ -508,6 +508,7 @@
 
   function rewriteApiUrl(url) {
     var text = String(url || "");
+    var appBasePath = getAppBasePath();
     var parsed;
 
     if (!text) {
@@ -524,6 +525,10 @@
     }
 
     if (parsed.origin === window.location.origin) {
+      if (appBasePath !== "/" && parsed.pathname.indexOf(appBasePath) === 0) {
+        return text;
+      }
+
       if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/apikey/") === 0) {
         return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
       }
