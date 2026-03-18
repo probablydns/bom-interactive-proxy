@@ -4,8 +4,46 @@
   var API_HOST_RE = /https:\/\/api(?:\.test2)?\.bom\.gov\.au/g;
   var API_HOST_MATCH = /api(?:\.test2)?\.bom\.gov\.au/;
   var THIRD_PARTY_BLOCK = /googletagmanager\.com|google-analytics\.com|google\.com\/recaptcha|gstatic\.com\/recaptcha/i;
-  var BLOCKED_SCRIPT_URL = window.location.origin + "/blocked-external/script";
-  var BLOCKED_INTERACTION_JSON_URL = window.location.origin + "/blocked-external/interaction.json";
+
+  function getAppBasePath() {
+    var path = String(window.location.pathname || "");
+    var marker = "/location/";
+    var locationIndex = path.indexOf(marker);
+    if (locationIndex >= 0) {
+      return path.slice(0, locationIndex + 1) || "/";
+    }
+
+    if (path.endsWith("/map") || path.endsWith("/index.html")) {
+      return path.replace(/(?:\/map|\/index\.html)$/, "/") || "/";
+    }
+
+    return path.endsWith("/") ? path : path.replace(/[^/]*$/, "");
+  }
+
+  function buildAppUrl(relativePath) {
+    var normalizedPath = String(relativePath || "").replace(/^\/+/, "");
+    return new URL(normalizedPath, window.location.origin + getAppBasePath()).toString();
+  }
+
+  function rewriteLocalAssetUrl(url) {
+    var src = String(url || "");
+    if (!src) {
+      return src;
+    }
+
+    if (src.indexOf("//") === 0) {
+      return window.location.protocol + src;
+    }
+
+    if (src.charAt(0) === "/") {
+      return buildAppUrl(src);
+    }
+
+    return src;
+  }
+
+  var BLOCKED_SCRIPT_URL = buildAppUrl("blocked-external/script");
+  var BLOCKED_INTERACTION_JSON_URL = buildAppUrl("blocked-external/interaction.json");
 
   function parseFlexibleBoolean(value) {
     if (value === null || value === undefined) {
@@ -677,11 +715,11 @@
           enumerable: descriptor.enumerable,
           get: descriptor.get,
           set: function (value) {
-            var src = String(value || "");
+            var src = rewriteLocalAssetUrl(value);
             if (THIRD_PARTY_BLOCK.test(src)) {
               return descriptor.set.call(this, BLOCKED_SCRIPT_URL);
             }
-            return descriptor.set.call(this, value);
+            return descriptor.set.call(this, src);
           }
         });
       }
@@ -689,13 +727,34 @@
       // no-op
     }
 
+    try {
+      var linkDescriptor = Object.getOwnPropertyDescriptor(window.HTMLLinkElement.prototype, "href");
+      if (linkDescriptor && typeof linkDescriptor.set === "function") {
+        Object.defineProperty(window.HTMLLinkElement.prototype, "href", {
+          configurable: true,
+          enumerable: linkDescriptor.enumerable,
+          get: linkDescriptor.get,
+          set: function (value) {
+            return linkDescriptor.set.call(this, rewriteLocalAssetUrl(value));
+          }
+        });
+      }
+    } catch (_error2) {
+      // no-op
+    }
+
     var nativeSetAttribute = window.Element.prototype.setAttribute;
     window.Element.prototype.setAttribute = function (name, value) {
-      if (this && this.tagName === "SCRIPT" && String(name).toLowerCase() === "src") {
-        var srcValue = String(value || "");
+      var lowerName = String(name || "").toLowerCase();
+      if (this && this.tagName === "SCRIPT" && lowerName === "src") {
+        var srcValue = rewriteLocalAssetUrl(value);
         if (THIRD_PARTY_BLOCK.test(srcValue)) {
           return nativeSetAttribute.call(this, name, BLOCKED_SCRIPT_URL);
         }
+        return nativeSetAttribute.call(this, name, srcValue);
+      }
+      if (this && this.tagName === "LINK" && lowerName === "href") {
+        return nativeSetAttribute.call(this, name, rewriteLocalAssetUrl(value));
       }
       return nativeSetAttribute.call(this, name, value);
     };
@@ -707,6 +766,14 @@
           var childSrc = String((child.getAttribute && child.getAttribute("src")) || child.src || "");
           if (THIRD_PARTY_BLOCK.test(childSrc)) {
             child.setAttribute("src", BLOCKED_SCRIPT_URL);
+          } else if (childSrc) {
+            child.setAttribute("src", rewriteLocalAssetUrl(childSrc));
+          }
+        }
+        if (child && child.tagName === "LINK") {
+          var childHref = String((child.getAttribute && child.getAttribute("href")) || child.href || "");
+          if (childHref) {
+            child.setAttribute("href", rewriteLocalAssetUrl(childHref));
           }
         }
       } catch (_error) {
