@@ -337,7 +337,7 @@
                         this.lastFramePosition = { current: 1, total: this.defaultFrameTotal };
                     }
                     this.setRequestedZoomPlan(requestedZoom, requestedZoomStart);
-                    this.deferRevealUntilZoomSettled = this.mapOnlyEnabled && Number.isFinite(requestedZoom);
+                    this.deferRevealUntilZoomSettled = false;
                     this.zoomRevealDeadline = this.deferRevealUntilZoomSettled
                         ? Date.now() + this.zoomRevealMaxWaitMs
                         : 0;
@@ -355,7 +355,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260319b');
+                    locationParams.set('_proxyv', '20260319c');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1730,7 +1730,9 @@
 
             cleanupBOMPage(doc, mapRoot) {
                 try {
-                    if (this.mapOnlyEnabled) {
+                    const canIsolateMap = Boolean(mapRoot);
+
+                    if (this.mapOnlyEnabled && canIsolateMap) {
                         this.applyMapOnlyStyles(doc);
                     }
 
@@ -1759,13 +1761,15 @@
                         elements.forEach(el => el.style.setProperty('display', 'none', 'important'));
                     });
 
-                    doc.documentElement.style.setProperty('height', '100%', 'important');
-                    doc.body.style.setProperty('height', '100%', 'important');
-                    doc.body.style.setProperty('margin', '0', 'important');
-                    doc.body.style.setProperty('padding', '0', 'important');
-                    doc.body.style.setProperty('overflow', 'hidden', 'important');
+                    if (canIsolateMap) {
+                        doc.documentElement.style.setProperty('height', '100%', 'important');
+                        doc.body.style.setProperty('height', '100%', 'important');
+                        doc.body.style.setProperty('margin', '0', 'important');
+                        doc.body.style.setProperty('padding', '0', 'important');
+                        doc.body.style.setProperty('overflow', 'hidden', 'important');
+                    }
 
-                    if (mapRoot && this.mapOnlyEnabled) {
+                    if (canIsolateMap && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);
                         this.setupMapClickSuppression(doc);
                         if (this.strictMapIsolation) {
@@ -1779,7 +1783,7 @@
                         this.frame.contentWindow.dispatchEvent(new Event('resize'));
                     }
 
-                    return Boolean(mapRoot);
+                    return canIsolateMap;
                 } catch (err) {
                     console.warn('Could not clean up BOM page:', err);
                     return false;
