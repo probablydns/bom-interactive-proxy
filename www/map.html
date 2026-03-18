@@ -185,6 +185,7 @@
                 this.zoomRevealDeadline = 0;
                 this.zoomRevealMaxWaitMs = 20000;
                 this.zoomRevealPollTimer = null;
+                this.strictMapIsolation = false;
                 this.init();
             }
 
@@ -248,10 +249,13 @@
 
                     // Get location from URL parameters or default to Melbourne
                     const params = new URLSearchParams(window.location.search);
-                    const pathName = String(window.location.pathname || '').toLowerCase();
                     const bomPath = await this.resolveLocationPath(params);
                     const cleanup = params.get('cleanup') === '1';
-                    const mapOnly = params.get('mapOnly') === '1';
+                    const mapOnlyParam = params.get('mapOnly');
+                    const mapOnly =
+                        mapOnlyParam === null
+                            ? true
+                            : !['0', 'false', 'off', 'no'].includes(String(mapOnlyParam).trim().toLowerCase());
                     const rain = params.get('rain') === '1';
                     const lowPowerParam = params.get('lowPower');
                     const animateParam = params.get('animate');
@@ -293,6 +297,7 @@
                     const requestedZoomStart = this.parseRequestedZoom(zoomStartParam);
                     this.bomPath = bomPath;
                     this.mapOnlyEnabled = mapOnly;
+                    this.strictMapIsolation = cleanup;
                     this.mapInteractionEnabled = mapOnly && interactive;
                     this.showTownNames = showTownNames;
                     this.persistTownLabelPreference();
@@ -350,7 +355,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260319a');
+                    locationParams.set('_proxyv', '20260319b');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1763,7 +1768,11 @@
                     if (mapRoot && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);
                         this.setupMapClickSuppression(doc);
-                        this.isolateToNode(doc, mapRoot);
+                        if (this.strictMapIsolation) {
+                            this.isolateToNode(doc, mapRoot);
+                        } else {
+                            this.focusMapRegion(doc, mapRoot);
+                        }
                     }
 
                     if (mapRoot && this.frame.contentWindow) {
@@ -3770,6 +3779,43 @@
                     current = parent;
                 }
 
+                this.expandToViewport(doc, focusNode);
+            }
+
+            focusMapRegion(doc, focusNode) {
+                const rootContainer =
+                    focusNode.closest('main, [role="main"], .dialog-off-canvas-main-canvas, .layout-content, .region-content') ||
+                    focusNode.parentElement ||
+                    focusNode;
+
+                Array.from(doc.body.children).forEach(child => {
+                    if (
+                        child === rootContainer ||
+                        child.contains(rootContainer) ||
+                        rootContainer.contains(child) ||
+                        child.tagName === 'SCRIPT' ||
+                        child.tagName === 'STYLE'
+                    ) {
+                        return;
+                    }
+
+                    child.style.setProperty('display', 'none', 'important');
+                });
+
+                Array.from(rootContainer.children || []).forEach(child => {
+                    if (
+                        child === focusNode ||
+                        child.contains(focusNode) ||
+                        child.tagName === 'SCRIPT' ||
+                        child.tagName === 'STYLE'
+                    ) {
+                        return;
+                    }
+
+                    child.style.setProperty('display', 'none', 'important');
+                });
+
+                this.expandToViewport(doc, rootContainer);
                 this.expandToViewport(doc, focusNode);
             }
 
