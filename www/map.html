@@ -351,7 +351,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260318e');
+                    locationParams.set('_proxyv', '20260318f');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1240,6 +1240,31 @@
                 return `${countrySlug}/${stateSlug}/${districtSlug}/${locationId}`;
             }
 
+            async resolveDefaultLocationPath() {
+                const defaultPlaceQueries = [
+                    'Melbourne, VIC',
+                    'Melbourne'
+                ];
+
+                for (const query of defaultPlaceQueries) {
+                    const place = await this.lookupPlaceByName(query);
+                    const placePath = this.buildPathFromPlace(place);
+                    if (placePath) {
+                        return placePath;
+                    }
+                }
+
+                const melbourneCoords = { lat: -37.8136, lon: 144.9631 };
+                const coordinatePlace = await this.lookupPlaceByCoordinates(melbourneCoords);
+                const coordinatePath = this.buildPathFromPlace(coordinatePlace);
+                if (coordinatePath) {
+                    return coordinatePath;
+                }
+
+                // Legacy fallback retained only if BOM lookup APIs are unavailable.
+                return 'australia/victoria/central/bvic_pt042-melbourne';
+            }
+
             async resolveLocationPath(params) {
                 const explicitPath = this.sanitizePath(params.get('path'));
                 if (explicitPath) {
@@ -1264,7 +1289,7 @@
                     }
                 }
 
-                return 'australia/victoria/central/bvic_pt042-melbourne';
+                return await this.resolveDefaultLocationPath();
             }
 
             parseRequestedZoom(value) {
