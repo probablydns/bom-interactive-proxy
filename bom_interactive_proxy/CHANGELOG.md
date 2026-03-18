@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.29
+
+- Fix ingress base-path detection when Home Assistant serves the add-on at `/api/hassio_ingress/<token>` without a trailing slash.
+- Refresh ingress cache-busters to `20260319r3`.
+
 ## 1.0.28
 
 - Enable Home Assistant ingress in add-on metadata and remove the raw `webui` override so `Open Web UI` uses ingress instead of `:8083`.

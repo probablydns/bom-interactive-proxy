@@ -196,6 +196,11 @@
 
             getAppBasePath() {
                 const path = String(window.location.pathname || '');
+                const ingressMatch = path.match(/^\/api\/hassio_ingress\/[^/]+/);
+                if (ingressMatch && ingressMatch[0]) {
+                    return `${ingressMatch[0]}/`;
+                }
+
                 const locationMarker = '/location/';
                 const locationIndex = path.indexOf(locationMarker);
 
@@ -347,7 +352,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260319r2');
+                    locationParams.set('_proxyv', '20260319r3');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);

@@ -7,6 +7,11 @@
 
   function getAppBasePath() {
     var path = String(window.location.pathname || "");
+    var ingressMatch = path.match(/^\/api\/hassio_ingress\/[^/]+/);
+    if (ingressMatch && ingressMatch[0]) {
+      return ingressMatch[0] + "/";
+    }
+
     var marker = "/location/";
     var locationIndex = path.indexOf(marker);
     if (locationIndex >= 0) {
