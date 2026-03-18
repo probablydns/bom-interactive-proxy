@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.30
+
+- Disable BOM RUM/APM under the proxy by stubbing the local `elastic-apm-rum` script and short-circuiting APM fetch/XHR/beacon calls in the injected runtime.
+- Skip service worker registration under Home Assistant ingress to reduce ingress-only embed failures.
+- Refresh ingress cache-busters to `20260319r4`.
+
 ## 1.0.29
 
 - Fix ingress base-path detection when Home Assistant serves the add-on at `/api/hassio_ingress/<token>` without a trailing slash.

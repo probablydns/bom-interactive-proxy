@@ -4,6 +4,8 @@
   var API_HOST_RE = /https:\/\/api(?:\.test2)?\.bom\.gov\.au/g;
   var API_HOST_MATCH = /api(?:\.test2)?\.bom\.gov\.au/;
   var THIRD_PARTY_BLOCK = /googletagmanager\.com|google-analytics\.com|google\.com\/recaptcha|gstatic\.com\/recaptcha/i;
+  var LOCAL_RUM_BLOCK = /\/modules\/custom\/bom_rum\/js\/elastic-apm-rum\.umd\.min\.js/i;
+  var APM_HOST_MATCH = /(^|\.)apm\.analytics\.bom\.gov\.au$/i;
 
   function getAppBasePath() {
     var path = String(window.location.pathname || "");
@@ -565,6 +567,12 @@
     }
 
     var pathname = String(parsed.pathname || "").toLowerCase();
+    var hostname = String(parsed.hostname || "").toLowerCase();
+
+    if (pathname.indexOf("/blocked-external/apm/") === 0 || APM_HOST_MATCH.test(hostname)) {
+      return { kind: "apm" };
+    }
+
     if (pathname === "/apikey/v1/locations/places/search") {
       var filter = String(parsed.searchParams.get("filter") || "").toLowerCase();
       if (filter.indexOf("nearby_type:bom_stn") !== -1) {
@@ -605,6 +613,15 @@
   }
 
   function buildBlockedInteractionResponse(kind) {
+    if (kind === "apm") {
+      return new Response("", {
+        status: 202,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      });
+    }
+
     var payload = JSON.stringify(buildBlockedInteractionPayload(kind));
     return new Response(payload, {
       status: 200,
@@ -691,6 +708,8 @@
 
       if (window.drupalSettings.bomRum) {
         window.drupalSettings.bomRum.apmUrl = buildAppUrl("blocked-external/apm");
+        window.drupalSettings.bomRum.active = false;
+        window.drupalSettings.bomRum.enabled = false;
         window.drupalSettings.bomRum.transactionSampleRate = 0;
         window.drupalSettings.bomRum.eventsLimit = 0;
       }
@@ -753,6 +772,20 @@
     };
   }
 
+  function patchSendBeacon() {
+    if (!navigator || typeof navigator.sendBeacon !== "function") {
+      return;
+    }
+
+    var nativeSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url, data) {
+      if (classifyBlockedInteractionUrl(url)) {
+        return true;
+      }
+      return nativeSendBeacon(url, data);
+    };
+  }
+
   function patchScriptInjection() {
     try {
       var descriptor = Object.getOwnPropertyDescriptor(window.HTMLScriptElement.prototype, "src");
@@ -763,7 +796,7 @@
           get: descriptor.get,
           set: function (value) {
             var src = rewriteLocalAssetUrl(value);
-            if (THIRD_PARTY_BLOCK.test(src)) {
+            if (THIRD_PARTY_BLOCK.test(src) || LOCAL_RUM_BLOCK.test(src)) {
               return descriptor.set.call(this, BLOCKED_SCRIPT_URL);
             }
             return descriptor.set.call(this, src);
@@ -795,7 +828,7 @@
       var lowerName = String(name || "").toLowerCase();
       if (this && this.tagName === "SCRIPT" && lowerName === "src") {
         var srcValue = rewriteLocalAssetUrl(value);
-        if (THIRD_PARTY_BLOCK.test(srcValue)) {
+        if (THIRD_PARTY_BLOCK.test(srcValue) || LOCAL_RUM_BLOCK.test(srcValue)) {
           return nativeSetAttribute.call(this, name, BLOCKED_SCRIPT_URL);
         }
         return nativeSetAttribute.call(this, name, srcValue);
@@ -811,7 +844,7 @@
       try {
         if (child && child.tagName === "SCRIPT") {
           var childSrc = String((child.getAttribute && child.getAttribute("src")) || child.src || "");
-          if (THIRD_PARTY_BLOCK.test(childSrc)) {
+          if (THIRD_PARTY_BLOCK.test(childSrc) || LOCAL_RUM_BLOCK.test(childSrc)) {
             child.setAttribute("src", BLOCKED_SCRIPT_URL);
           } else if (childSrc) {
             child.setAttribute("src", rewriteLocalAssetUrl(childSrc));
@@ -846,6 +879,7 @@
   bootstrapDrupalSettings();
   patchFetch();
   patchXHR();
+  patchSendBeacon();
   patchScriptInjection();
   patchKnownGlobals();
   patchArcGISRequire();
