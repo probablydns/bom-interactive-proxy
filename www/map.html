@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOM Interactive Weather Map</title>
-    <script>
-        window.BOM_PROXY_CONFIG = Object.assign(
-            { displayTimeZone: "__DISPLAY_TIMEZONE__" },
-            window.BOM_PROXY_CONFIG || {}
-        );
-    </script>
     <style>
         * {
             margin: 0;
@@ -121,9 +115,7 @@
                 this.animateMode = 'native';
                 this.animateIntervalMs = 2000;
                 this.frameSkip = 1;
-                this.displayTimeZone =
-                    (window.BOM_PROXY_CONFIG && window.BOM_PROXY_CONFIG.displayTimeZone) ||
-                    'Australia/Melbourne';
+                this.displayTimeZone = 'Australia/Melbourne';
                 this.maxRadarTimestampAgeMs = 8 * 60 * 60 * 1000;
                 this.maxRadarFutureSkewMs = 20 * 60 * 1000;
                 this.throttledAnimationTimer = null;
@@ -185,28 +177,7 @@
                 this.zoomRevealDeadline = 0;
                 this.zoomRevealMaxWaitMs = 20000;
                 this.zoomRevealPollTimer = null;
-                this.strictMapIsolation = false;
                 this.init();
-            }
-
-            getAppBasePath() {
-                const path = String(window.location.pathname || '');
-                const marker = '/location/';
-                const locationIndex = path.indexOf(marker);
-                if (locationIndex >= 0) {
-                    return path.slice(0, locationIndex + 1) || '/';
-                }
-
-                if (path.endsWith('/map') || path.endsWith('/index.html')) {
-                    return path.replace(/(?:\/map|\/index\.html)$/, '/') || '/';
-                }
-
-                return path.endsWith('/') ? path : `${path}/`;
-            }
-
-            buildAppUrl(relativePath) {
-                const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
-                return new URL(normalizedPath, `${window.location.origin}${this.getAppBasePath()}`).toString();
             }
 
             notifyParent(status, detail = '') {
@@ -223,16 +194,34 @@
                 }, '*');
             }
 
+            getAppBasePath() {
+                const path = String(window.location.pathname || '');
+                const locationMarker = '/location/';
+                const locationIndex = path.indexOf(locationMarker);
+
+                if (locationIndex >= 0) {
+                    return path.slice(0, locationIndex + 1) || '/';
+                }
+
+                if (path.endsWith('/map') || path.endsWith('/index.html')) {
+                    return path.replace(/(?:\/map|\/index\.html)$/, '/') || '/';
+                }
+
+                return path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+            }
+
+            buildAppUrl(relativePath) {
+                const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
+                return new URL(normalizedPath, window.location.origin + this.getAppBasePath()).toString();
+            }
+
             async registerMapCacheWorker() {
                 if (!('serviceWorker' in navigator)) {
                     return;
                 }
 
                 try {
-                    const registration = await navigator.serviceWorker.register(
-                        this.buildAppUrl('map-sw.js'),
-                        { scope: this.getAppBasePath() }
-                    );
+                    const registration = await navigator.serviceWorker.register('/map-sw.js', { scope: '/' });
                     if (registration && registration.waiting) {
                         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                     }
@@ -249,13 +238,11 @@
 
                     // Get location from URL parameters or default to Melbourne
                     const params = new URLSearchParams(window.location.search);
+                    const pathName = String(window.location.pathname || '').toLowerCase();
+                    const isRootEntryPoint = pathName === '/' || pathName === '/index.html';
                     const bomPath = await this.resolveLocationPath(params);
                     const cleanup = params.get('cleanup') === '1';
-                    const mapOnlyParam = params.get('mapOnly');
-                    const mapOnly =
-                        mapOnlyParam === null
-                            ? true
-                            : !['0', 'false', 'off', 'no'].includes(String(mapOnlyParam).trim().toLowerCase());
+                    const mapOnly = params.get('mapOnly') === '1' || isRootEntryPoint;
                     const rain = params.get('rain') === '1';
                     const lowPowerParam = params.get('lowPower');
                     const animateParam = params.get('animate');
@@ -297,7 +284,6 @@
                     const requestedZoomStart = this.parseRequestedZoom(zoomStartParam);
                     this.bomPath = bomPath;
                     this.mapOnlyEnabled = mapOnly;
-                    this.strictMapIsolation = cleanup;
                     this.mapInteractionEnabled = mapOnly && interactive;
                     this.showTownNames = showTownNames;
                     this.persistTownLabelPreference();
@@ -337,7 +323,7 @@
                         this.lastFramePosition = { current: 1, total: this.defaultFrameTotal };
                     }
                     this.setRequestedZoomPlan(requestedZoom, requestedZoomStart);
-                    this.deferRevealUntilZoomSettled = false;
+                    this.deferRevealUntilZoomSettled = this.mapOnlyEnabled && Number.isFinite(requestedZoom);
                     this.zoomRevealDeadline = this.deferRevealUntilZoomSettled
                         ? Date.now() + this.zoomRevealMaxWaitMs
                         : 0;
@@ -355,7 +341,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260319c');
+                    locationParams.set('_proxyv', '20260319r1');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -958,7 +944,7 @@
                     const townLayer = new FeatureLayerCtor({
                         id: 'bom-town-labels-override',
                         title: 'Towns and cities',
-                        url: this.buildAppUrl('overlays/towns_and_cities/FeatureServer/3'),
+                        url: '/overlays/towns_and_cities/FeatureServer/3',
                         outFields: ['NAME', 'MIN_ZOOM_LVL'],
                         legendEnabled: false,
                         listMode: 'hide',
@@ -1047,7 +1033,7 @@
                 }
 
                 try {
-                    const details = await this.fetchJSON(this.buildAppUrl(`apikey/v1/locations/places/details/place/${encodeURIComponent(place.id)}`));
+                    const details = await this.fetchJSON(`/apikey/v1/locations/places/details/place/${encodeURIComponent(place.id)}`);
                     if (details && details.place) {
                         return details.place;
                     }
@@ -1172,7 +1158,7 @@
                     }
 
                     const lookupUrl =
-                        this.buildAppUrl(`apikey/v1/locations/places/autocomplete?name=${encodeURIComponent(lookupName)}&limit=8&website-sort=true`);
+                        `/apikey/v1/locations/places/autocomplete?name=${encodeURIComponent(lookupName)}&limit=8&website-sort=true`;
                     const data = await this.fetchJSON(lookupUrl);
                     const candidates = Array.isArray(data && data.candidates) ? data.candidates : [];
                     if (!candidates.length) {
@@ -1198,7 +1184,7 @@
                     const coordinate = encodeURIComponent(`"${coords.lon},${coords.lat}"`);
                     const filter = encodeURIComponent('type:place');
                     const lookupUrl =
-                        this.buildAppUrl(`apikey/v1/locations/places/search?coordinate=${coordinate}&filter=${filter}&radius=50000&website-sort=true`);
+                        `/apikey/v1/locations/places/search?coordinate=${coordinate}&filter=${filter}&radius=50000&website-sort=true`;
                     const data = await this.fetchJSON(lookupUrl);
                     if (!data || !data.place) {
                         return null;
@@ -1244,31 +1230,6 @@
                 return `${countrySlug}/${stateSlug}/${districtSlug}/${locationId}`;
             }
 
-            async resolveDefaultLocationPath() {
-                const defaultPlaceQueries = [
-                    'Melbourne, VIC',
-                    'Melbourne'
-                ];
-
-                for (const query of defaultPlaceQueries) {
-                    const place = await this.lookupPlaceByName(query);
-                    const placePath = this.buildPathFromPlace(place);
-                    if (placePath) {
-                        return placePath;
-                    }
-                }
-
-                const melbourneCoords = { lat: -37.8136, lon: 144.9631 };
-                const coordinatePlace = await this.lookupPlaceByCoordinates(melbourneCoords);
-                const coordinatePath = this.buildPathFromPlace(coordinatePlace);
-                if (coordinatePath) {
-                    return coordinatePath;
-                }
-
-                // Legacy fallback retained only if BOM lookup APIs are unavailable.
-                return 'australia/victoria/central/bvic_pt042-melbourne';
-            }
-
             async resolveLocationPath(params) {
                 const explicitPath = this.sanitizePath(params.get('path'));
                 if (explicitPath) {
@@ -1293,7 +1254,7 @@
                     }
                 }
 
-                return await this.resolveDefaultLocationPath();
+                return 'australia/victoria/central/bvic_pt042-melbourne';
             }
 
             parseRequestedZoom(value) {
@@ -1365,7 +1326,7 @@
             }
 
             async resolveRadarFrameMetadata() {
-                const capabilitiesUrl = this.buildAppUrl('timeseries/wmts?service=WMTS&request=GetCapabilities');
+                const capabilitiesUrl = '/timeseries/wmts?service=WMTS&request=GetCapabilities';
                 try {
                     const response = await fetch(capabilitiesUrl, {
                         cache: 'no-store',
@@ -1730,9 +1691,7 @@
 
             cleanupBOMPage(doc, mapRoot) {
                 try {
-                    const canIsolateMap = Boolean(mapRoot);
-
-                    if (this.mapOnlyEnabled && canIsolateMap) {
+                    if (this.mapOnlyEnabled) {
                         this.applyMapOnlyStyles(doc);
                     }
 
@@ -1761,29 +1720,23 @@
                         elements.forEach(el => el.style.setProperty('display', 'none', 'important'));
                     });
 
-                    if (canIsolateMap) {
-                        doc.documentElement.style.setProperty('height', '100%', 'important');
-                        doc.body.style.setProperty('height', '100%', 'important');
-                        doc.body.style.setProperty('margin', '0', 'important');
-                        doc.body.style.setProperty('padding', '0', 'important');
-                        doc.body.style.setProperty('overflow', 'hidden', 'important');
-                    }
+                    doc.documentElement.style.setProperty('height', '100%', 'important');
+                    doc.body.style.setProperty('height', '100%', 'important');
+                    doc.body.style.setProperty('margin', '0', 'important');
+                    doc.body.style.setProperty('padding', '0', 'important');
+                    doc.body.style.setProperty('overflow', 'hidden', 'important');
 
-                    if (canIsolateMap && this.mapOnlyEnabled) {
+                    if (mapRoot && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);
                         this.setupMapClickSuppression(doc);
-                        if (this.strictMapIsolation) {
-                            this.isolateToNode(doc, mapRoot);
-                        } else {
-                            this.focusMapRegion(doc, mapRoot);
-                        }
+                        this.isolateToNode(doc, mapRoot);
                     }
 
                     if (mapRoot && this.frame.contentWindow) {
                         this.frame.contentWindow.dispatchEvent(new Event('resize'));
                     }
 
-                    return canIsolateMap;
+                    return Boolean(mapRoot);
                 } catch (err) {
                     console.warn('Could not clean up BOM page:', err);
                     return false;
@@ -2124,8 +2077,8 @@
                         const parsed = new URL(rawHref, baseHref);
                         const pathname = String(parsed.pathname || '').toLowerCase();
                         return (
-                            pathname.endsWith('/apikey/v1/locations/places/search') ||
-                            pathname.includes('/apikey/v1/observations/recent/')
+                            pathname === '/apikey/v1/locations/places/search' ||
+                            pathname.startsWith('/apikey/v1/observations/recent/')
                         );
                     } catch (error) {
                         return false;
@@ -3783,43 +3736,6 @@
                     current = parent;
                 }
 
-                this.expandToViewport(doc, focusNode);
-            }
-
-            focusMapRegion(doc, focusNode) {
-                const rootContainer =
-                    focusNode.closest('main, [role="main"], .dialog-off-canvas-main-canvas, .layout-content, .region-content') ||
-                    focusNode.parentElement ||
-                    focusNode;
-
-                Array.from(doc.body.children).forEach(child => {
-                    if (
-                        child === rootContainer ||
-                        child.contains(rootContainer) ||
-                        rootContainer.contains(child) ||
-                        child.tagName === 'SCRIPT' ||
-                        child.tagName === 'STYLE'
-                    ) {
-                        return;
-                    }
-
-                    child.style.setProperty('display', 'none', 'important');
-                });
-
-                Array.from(rootContainer.children || []).forEach(child => {
-                    if (
-                        child === focusNode ||
-                        child.contains(focusNode) ||
-                        child.tagName === 'SCRIPT' ||
-                        child.tagName === 'STYLE'
-                    ) {
-                        return;
-                    }
-
-                    child.style.setProperty('display', 'none', 'important');
-                });
-
-                this.expandToViewport(doc, rootContainer);
                 this.expandToViewport(doc, focusNode);
             }
 

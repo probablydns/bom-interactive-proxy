@@ -1,14 +1,12 @@
 name: BOM Interactive Proxy
 slug: bom_interactive_proxy
 description: Proxy for BOM interactive weather maps with full-screen rain radar map view.
-version: "1.0.25"
+version: "1.0.26"
 url: https://github.com/probablydns/bom-interactive-proxy
 startup: services
 boot: auto
 init: false
 panel_icon: mdi:weather-rainy
-ingress: true
-ingress_port: 80
 webui: http://[HOST]:[PORT:80]/
 arch:
   - amd64
@@ -17,7 +15,5 @@ ports:
   80/tcp: 8083
 ports_description:
   80/tcp: BOM map proxy HTTP port
-options:
-  display_timezone: Australia/Melbourne
-schema:
-  display_timezone: str
+options: {}
+schema: {}

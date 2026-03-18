@@ -529,7 +529,11 @@
         return text;
       }
 
-      if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/apikey/") === 0) {
+      if (
+        parsed.pathname.indexOf("/api/") === 0 ||
+        parsed.pathname.indexOf("/apikey/") === 0 ||
+        parsed.pathname.indexOf("/blocked-external/") === 0
+      ) {
         return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
       }
     }
@@ -681,7 +685,7 @@
       }
 
       if (window.drupalSettings.bomRum) {
-        window.drupalSettings.bomRum.apmUrl = window.location.origin + "/blocked-external/apm";
+        window.drupalSettings.bomRum.apmUrl = buildAppUrl("blocked-external/apm");
         window.drupalSettings.bomRum.transactionSampleRate = 0;
         window.drupalSettings.bomRum.eventsLimit = 0;
       }
