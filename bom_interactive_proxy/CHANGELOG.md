@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.26
+
+- Reset the ingress implementation onto the stable `79a9112` wrapper baseline.
+- Make the wrapper and runtime asset/API overrides ingress-aware without changing the known-good direct map behavior.
+- Add dedicated BOM CSS rewrites for Drupal aggregate CSS and BOM theme chunk CSS so fonts and SVG assets stay inside ingress.
+- Return a local `app-config.js` shim for stale clients that still request it through ingress.
+
 ## 1.0.4
 
 - Add custom Home Assistant add-on artwork (`icon.png` and `logo.png`) with weather-radar styling.

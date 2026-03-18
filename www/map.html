@@ -194,6 +194,27 @@
                 }, '*');
             }
 
+            getAppBasePath() {
+                const path = String(window.location.pathname || '');
+                const locationMarker = '/location/';
+                const locationIndex = path.indexOf(locationMarker);
+
+                if (locationIndex >= 0) {
+                    return path.slice(0, locationIndex + 1) || '/';
+                }
+
+                if (path.endsWith('/map') || path.endsWith('/index.html')) {
+                    return path.replace(/(?:\/map|\/index\.html)$/, '/') || '/';
+                }
+
+                return path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+            }
+
+            buildAppUrl(relativePath) {
+                const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
+                return new URL(normalizedPath, window.location.origin + this.getAppBasePath()).toString();
+            }
+
             async registerMapCacheWorker() {
                 if (!('serviceWorker' in navigator)) {
                     return;
@@ -320,9 +341,8 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    const bomUrl = locationParams.toString()
-                        ? `/location/${bomPath}?${locationParams.toString()}`
-                        : `/location/${bomPath}`;
+                    locationParams.set('_proxyv', '20260319r1');
+                    const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
                     
