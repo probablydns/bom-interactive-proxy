@@ -508,8 +508,25 @@
 
   function rewriteApiUrl(url) {
     var text = String(url || "");
+    var parsed;
+
+    if (!text) {
+      return text;
+    }
+
     if (API_HOST_MATCH.test(text)) {
       text = text.replace(API_HOST_RE, window.location.origin);
+    }
+
+    parsed = parseUrlLike(text);
+    if (!parsed) {
+      return text;
+    }
+
+    if (parsed.origin === window.location.origin) {
+      if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/apikey/") === 0) {
+        return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
+      }
     }
 
     return text;
