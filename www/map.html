@@ -249,10 +249,9 @@
                     // Get location from URL parameters or default to Melbourne
                     const params = new URLSearchParams(window.location.search);
                     const pathName = String(window.location.pathname || '').toLowerCase();
-                    const isRootEntryPoint = pathName === '/' || pathName === '/index.html';
                     const bomPath = await this.resolveLocationPath(params);
                     const cleanup = params.get('cleanup') === '1';
-                    const mapOnly = params.get('mapOnly') === '1' || isRootEntryPoint;
+                    const mapOnly = params.get('mapOnly') === '1';
                     const rain = params.get('rain') === '1';
                     const lowPowerParam = params.get('lowPower');
                     const animateParam = params.get('animate');
@@ -351,7 +350,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260318g');
+                    locationParams.set('_proxyv', '20260319a');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
