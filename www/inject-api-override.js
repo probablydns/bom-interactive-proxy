@@ -39,6 +39,15 @@
       return buildAppUrl(src);
     }
 
+    try {
+      var parsed = new URL(src, window.location.href);
+      if (parsed.origin === window.location.origin && parsed.pathname.charAt(0) === "/") {
+        return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
+      }
+    } catch (_error) {
+      // leave non-URL values untouched
+    }
+
     return src;
   }
 
