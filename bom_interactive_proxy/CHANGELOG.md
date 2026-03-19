@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.33
+
+- Rewrite BOM map service URLs inside parsed ingress runtime config so `/timeseries`, `/overlays`, `/basemaps`, `/apikey` and related paths stay under the current ingress token before the React map boots.
+- Rewrite embedded JSON endpoint strings in proxied BOM HTML for ingress, and refresh cache-busters to `20260320b`.
+
 ## 1.0.32
 
 - Inject a real inline global `elasticApm` stub into proxied BOM HTML before BOM footer scripts run, so ingress pages cannot crash on `elasticApm.init(...)`.

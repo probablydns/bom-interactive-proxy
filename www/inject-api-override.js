@@ -6,6 +6,7 @@
   var THIRD_PARTY_BLOCK = /googletagmanager\.com|google-analytics\.com|google\.com\/recaptcha|gstatic\.com\/recaptcha/i;
   var LOCAL_RUM_BLOCK = /\/modules\/custom\/bom_rum\/js\/elastic-apm-rum\.umd\.min\.js/i;
   var APM_HOST_MATCH = /(^|\.)apm\.analytics\.bom\.gov\.au$/i;
+  var INGRESS_SERVICE_PATH_RE = /^\/(?:api|apikey|blocked-external|v1|mapping|timeseries|overlays|basemaps|locations|places|services|forecasts|weather)\b/i;
 
   function createApmStub() {
     return {
@@ -85,6 +86,10 @@
     }
 
     return src;
+  }
+
+  function shouldRewriteIngressPath(pathname) {
+    return INGRESS_SERVICE_PATH_RE.test(String(pathname || ""));
   }
 
   var BLOCKED_SCRIPT_URL = buildAppUrl("blocked-external/script");
@@ -558,11 +563,7 @@
         return text;
       }
 
-      if (
-        parsed.pathname.indexOf("/api/") === 0 ||
-        parsed.pathname.indexOf("/apikey/") === 0 ||
-        parsed.pathname.indexOf("/blocked-external/") === 0
-      ) {
+      if (shouldRewriteIngressPath(parsed.pathname)) {
         return buildAppUrl(parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash);
       }
     }
@@ -655,6 +656,18 @@
   }
 
   function pruneSettings(node) {
+    if (typeof node === "string") {
+      var rewrittenApiUrl = rewriteApiUrl(node);
+      if (rewrittenApiUrl !== node) {
+        return rewrittenApiUrl;
+      }
+
+      var rewrittenAssetUrl = rewriteLocalAssetUrl(node);
+      if (rewrittenAssetUrl !== node) {
+        return rewrittenAssetUrl;
+      }
+    }
+
     if (Array.isArray(node)) {
       var outArray = [];
       for (var i = 0; i < node.length; i += 1) {
@@ -735,6 +748,10 @@
         window.drupalSettings.bomRum.enabled = false;
         window.drupalSettings.bomRum.transactionSampleRate = 0;
         window.drupalSettings.bomRum.eventsLimit = 0;
+      }
+
+      if (window.drupalSettings.path) {
+        window.drupalSettings.path.baseUrl = getAppBasePath();
       }
     } catch (_error) {
       window.drupalSettings = window.drupalSettings || {};
@@ -846,6 +863,26 @@
       // no-op
     }
 
+    try {
+      var imageDescriptor = Object.getOwnPropertyDescriptor(window.HTMLImageElement.prototype, "src");
+      if (imageDescriptor && typeof imageDescriptor.set === "function") {
+        Object.defineProperty(window.HTMLImageElement.prototype, "src", {
+          configurable: true,
+          enumerable: imageDescriptor.enumerable,
+          get: imageDescriptor.get,
+          set: function (value) {
+            var src = rewriteApiUrl(value);
+            if (src === value) {
+              src = rewriteLocalAssetUrl(value);
+            }
+            return imageDescriptor.set.call(this, src);
+          }
+        });
+      }
+    } catch (_error3) {
+      // no-op
+    }
+
     var nativeSetAttribute = window.Element.prototype.setAttribute;
     window.Element.prototype.setAttribute = function (name, value) {
       var lowerName = String(name || "").toLowerCase();
@@ -858,6 +895,13 @@
       }
       if (this && this.tagName === "LINK" && lowerName === "href") {
         return nativeSetAttribute.call(this, name, rewriteLocalAssetUrl(value));
+      }
+      if (this && this.tagName === "IMG" && lowerName === "src") {
+        var imageSrcValue = rewriteApiUrl(value);
+        if (imageSrcValue === value) {
+          imageSrcValue = rewriteLocalAssetUrl(value);
+        }
+        return nativeSetAttribute.call(this, name, imageSrcValue);
       }
       return nativeSetAttribute.call(this, name, value);
     };
@@ -877,6 +921,12 @@
           var childHref = String((child.getAttribute && child.getAttribute("href")) || child.href || "");
           if (childHref) {
             child.setAttribute("href", rewriteLocalAssetUrl(childHref));
+          }
+        }
+        if (child && child.tagName === "IMG") {
+          var childImageSrc = String((child.getAttribute && child.getAttribute("src")) || child.src || "");
+          if (childImageSrc) {
+            child.setAttribute("src", rewriteLocalAssetUrl(rewriteApiUrl(childImageSrc)));
           }
         }
       } catch (_error) {
