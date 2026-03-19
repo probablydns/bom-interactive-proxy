@@ -357,7 +357,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320e');
+                    locationParams.set('_proxyv', '20260320f');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1712,6 +1712,9 @@
 
             findMapHostRoot(doc) {
                 const selectors = [
+                    '#drupal-location-placeholder',
+                    '[id*="drupal-location-placeholder"]',
+                    '.location-level',
                     '[data-component="bom-spatial-map"]',
                     '[class*="spatial-map"]',
                     '[class*="weather-map"]',
@@ -1726,7 +1729,7 @@
                     }
 
                     const container = node.closest(
-                        '[data-component="bom-spatial-map"], [class*="spatial-map"], [class*="weather-map"], section, article, main, div'
+                        '#drupal-location-placeholder, [id*="drupal-location-placeholder"], .location-level, [data-component="bom-spatial-map"], [class*="spatial-map"], [class*="weather-map"], section, article, main, div'
                     );
                     return container || node;
                 }

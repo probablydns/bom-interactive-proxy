@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.37
+
+- Use BOM's `#drupal-location-placeholder` as the ingress map-host fallback, and refresh the wrapper cache-buster to `20260320f`.
+
 ## 1.0.36
 
 - Prefer the outer ESRI viewport container when isolating the map, add a delayed fallback to BOM's map host container under ingress, and refresh the wrapper cache-buster to `20260320e`.
