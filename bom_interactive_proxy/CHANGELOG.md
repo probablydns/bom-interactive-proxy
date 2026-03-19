@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.32
+
+- Inject a real inline global `elasticApm` stub into proxied BOM HTML before BOM footer scripts run, so ingress pages cannot crash on `elasticApm.init(...)`.
+- Refresh ingress cache-busters to `20260320a`.
+
 ## 1.0.31
 
 - Export the BOM RUM stub as a real global `elasticApm` symbol so BOM footer code can call `elasticApm.init(...)` without crashing.
