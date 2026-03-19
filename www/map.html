@@ -357,7 +357,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320b');
+                    locationParams.set('_proxyv', '20260320c');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1657,27 +1657,37 @@
                 runCleanup();
             }
 
+            findStrictMapRoot(doc) {
+                const viewportSelectors = [
+                    '.esri-view-root',
+                    '.esri-view-surface',
+                    '.mapboxgl-map',
+                    '.leaflet-container',
+                    '.ol-viewport',
+                    'canvas.mapboxgl-canvas'
+                ];
+
+                for (const selector of viewportSelectors) {
+                    const node = doc.querySelector(selector);
+                    if (!node) {
+                        continue;
+                    }
+
+                    const container = node.closest(
+                        '.esri-view-root, .esri-view, .esri-view-surface, .mapboxgl-map, .leaflet-container, .ol-viewport, [class*="map-view"], [class*="map-canvas"]'
+                    );
+                    return container || node.parentElement || node;
+                }
+
+                return null;
+            }
+
             findMapRoot(doc) {
                 if (this.mapOnlyEnabled) {
-                    const viewportSelectors = [
-                        '.esri-view-root',
-                        '.mapboxgl-map',
-                        '.leaflet-container',
-                        '.ol-viewport',
-                        'canvas.mapboxgl-canvas'
-                    ];
-
-                    for (const selector of viewportSelectors) {
-                        const node = doc.querySelector(selector);
-                        if (!node) {
-                            continue;
-                        }
-
-                        const container = node.closest(
-                            '.esri-view-root, .mapboxgl-map, .leaflet-container, .ol-viewport, [class*="map-view"], [class*="map-canvas"]'
-                        );
-                        return container || node.parentElement || node;
-                    }
+                    // Under ingress the React map mount often exists before the ArcGIS viewport does.
+                    // Isolating that placeholder too early leaves the fallback "Currently unavailable" panel
+                    // visible forever, so map-only mode waits for a real map viewport.
+                    return this.findStrictMapRoot(doc);
                 }
 
                 const selectors = [
@@ -1736,11 +1746,15 @@
                         elements.forEach(el => el.style.setProperty('display', 'none', 'important'));
                     });
 
-                    doc.documentElement.style.setProperty('height', '100%', 'important');
-                    doc.body.style.setProperty('height', '100%', 'important');
-                    doc.body.style.setProperty('margin', '0', 'important');
-                    doc.body.style.setProperty('padding', '0', 'important');
-                    doc.body.style.setProperty('overflow', 'hidden', 'important');
+                    // Only collapse the document to the viewport once a real map root exists.
+                    // Before that, leave the page layout alone so the BOM app can finish booting.
+                    if (mapRoot) {
+                        doc.documentElement.style.setProperty('height', '100%', 'important');
+                        doc.body.style.setProperty('height', '100%', 'important');
+                        doc.body.style.setProperty('margin', '0', 'important');
+                        doc.body.style.setProperty('padding', '0', 'important');
+                        doc.body.style.setProperty('overflow', 'hidden', 'important');
+                    }
 
                     if (mapRoot && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);

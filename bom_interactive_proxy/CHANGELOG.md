@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.34
+
+- In map-only mode, wait for a real map viewport such as `.esri-view-root` before isolating the BOM page, instead of isolating the early `bom-spatial-map` placeholder.
+- Leave the BOM document layout intact until a real map root exists, and refresh the wrapper cache-buster to `20260320c`.
+
 ## 1.0.33
 
 - Rewrite BOM map service URLs inside parsed ingress runtime config so `/timeseries`, `/overlays`, `/basemaps`, `/apikey` and related paths stay under the current ingress token before the React map boots.
