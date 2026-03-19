@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.35
+
+- Do not apply map-only CSS until a real map viewport exists, so ingress no longer traps the BOM page in a non-scrollable warnings layout while the map is still booting.
+- Broaden strict map-root detection to include `.esri-view`, and refresh the wrapper cache-buster to `20260320d`.
+
 ## 1.0.34
 
 - In map-only mode, wait for a real map viewport such as `.esri-view-root` before isolating the BOM page, instead of isolating the early `bom-spatial-map` placeholder.

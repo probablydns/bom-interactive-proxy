@@ -357,7 +357,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320c');
+                    locationParams.set('_proxyv', '20260320d');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1660,6 +1660,7 @@
             findStrictMapRoot(doc) {
                 const viewportSelectors = [
                     '.esri-view-root',
+                    '.esri-view',
                     '.esri-view-surface',
                     '.mapboxgl-map',
                     '.leaflet-container',
@@ -1717,7 +1718,7 @@
 
             cleanupBOMPage(doc, mapRoot) {
                 try {
-                    if (this.mapOnlyEnabled) {
+                    if (this.mapOnlyEnabled && mapRoot) {
                         this.applyMapOnlyStyles(doc);
                     }
 
@@ -1747,7 +1748,8 @@
                     });
 
                     // Only collapse the document to the viewport once a real map root exists.
-                    // Before that, leave the page layout alone so the BOM app can finish booting.
+                    // Before that, leave the page layout alone so the BOM app can finish booting
+                    // and so the page stays scrollable instead of trapping a fallback panel.
                     if (mapRoot) {
                         doc.documentElement.style.setProperty('height', '100%', 'important');
                         doc.body.style.setProperty('height', '100%', 'important');
