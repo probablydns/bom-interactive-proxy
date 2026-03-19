@@ -7,6 +7,28 @@
   var LOCAL_RUM_BLOCK = /\/modules\/custom\/bom_rum\/js\/elastic-apm-rum\.umd\.min\.js/i;
   var APM_HOST_MATCH = /(^|\.)apm\.analytics\.bom\.gov\.au$/i;
 
+  function createApmStub() {
+    return {
+      init: function () {
+        return {
+          observe: function () {},
+          captureError: function () {},
+          setUserContext: function () {},
+          addFilter: function () {},
+          removeFilter: function () {},
+          setInitialPageLoadName: function () {},
+          startTransaction: function () {
+            return {
+              end: function () {}
+            };
+          },
+          apmServer: {},
+          serviceFactory: {}
+        };
+      }
+    };
+  }
+
   function getAppBasePath() {
     var path = String(window.location.pathname || "");
     var ingressMatch = path.match(/^\/api\/hassio_ingress\/[^/]+/);
@@ -707,6 +729,7 @@
       }
 
       if (window.drupalSettings.bomRum) {
+        window.elasticApm = window.elasticApm || createApmStub();
         window.drupalSettings.bomRum.apmUrl = buildAppUrl("blocked-external/apm");
         window.drupalSettings.bomRum.active = false;
         window.drupalSettings.bomRum.enabled = false;

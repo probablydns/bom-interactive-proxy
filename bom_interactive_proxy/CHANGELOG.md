@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.31
+
+- Export the BOM RUM stub as a real global `elasticApm` symbol so BOM footer code can call `elasticApm.init(...)` without crashing.
+- Make the local `elastic-apm-rum` stub non-cached and refresh ingress cache-busters to `20260319r5`.
+
 ## 1.0.30
 
 - Disable BOM RUM/APM under the proxy by stubbing the local `elastic-apm-rum` script and short-circuiting APM fetch/XHR/beacon calls in the injected runtime.
