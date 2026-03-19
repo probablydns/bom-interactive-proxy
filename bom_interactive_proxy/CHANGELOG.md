@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.36
+
+- Prefer the outer ESRI viewport container when isolating the map, add a delayed fallback to BOM's map host container under ingress, and refresh the wrapper cache-buster to `20260320e`.
+
 ## 1.0.35
 
 - Do not apply map-only CSS until a real map viewport exists, so ingress no longer traps the BOM page in a non-scrollable warnings layout while the map is still booting.

@@ -357,7 +357,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320d');
+                    locationParams.set('_proxyv', '20260320e');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1674,10 +1674,61 @@
                         continue;
                     }
 
+                    const esriRoot = node.closest('.esri-view-root');
+                    if (esriRoot) {
+                        return esriRoot;
+                    }
+
+                    const esriView = node.closest('.esri-view');
+                    if (esriView) {
+                        return esriView;
+                    }
+
+                    const mapboxRoot = node.closest('.mapboxgl-map');
+                    if (mapboxRoot) {
+                        return mapboxRoot;
+                    }
+
+                    const leafletRoot = node.closest('.leaflet-container');
+                    if (leafletRoot) {
+                        return leafletRoot;
+                    }
+
+                    const openLayersRoot = node.closest('.ol-viewport');
+                    if (openLayersRoot) {
+                        return openLayersRoot;
+                    }
+
+                    const genericRoot = node.closest('[class*="map-view"], [class*="map-canvas"]');
+                    if (genericRoot) {
+                        return genericRoot;
+                    }
+
+                    return node.parentElement || node;
+                }
+
+                return null;
+            }
+
+            findMapHostRoot(doc) {
+                const selectors = [
+                    '[data-component="bom-spatial-map"]',
+                    '[class*="spatial-map"]',
+                    '[class*="weather-map"]',
+                    '[class*="map-view"]',
+                    '[class*="map-canvas"]'
+                ];
+
+                for (const selector of selectors) {
+                    const node = doc.querySelector(selector);
+                    if (!node) {
+                        continue;
+                    }
+
                     const container = node.closest(
-                        '.esri-view-root, .esri-view, .esri-view-surface, .mapboxgl-map, .leaflet-container, .ol-viewport, [class*="map-view"], [class*="map-canvas"]'
+                        '[data-component="bom-spatial-map"], [class*="spatial-map"], [class*="weather-map"], section, article, main, div'
                     );
-                    return container || node.parentElement || node;
+                    return container || node;
                 }
 
                 return null;
@@ -1688,7 +1739,18 @@
                     // Under ingress the React map mount often exists before the ArcGIS viewport does.
                     // Isolating that placeholder too early leaves the fallback "Currently unavailable" panel
                     // visible forever, so map-only mode waits for a real map viewport.
-                    return this.findStrictMapRoot(doc);
+                    const strictRoot = this.findStrictMapRoot(doc);
+                    if (strictRoot) {
+                        return strictRoot;
+                    }
+
+                    // If ingress never exposes the ArcGIS viewport classes, fall back to BOM's own
+                    // map host container after a few boot passes so we still isolate the map region.
+                    if (this.cleanupAttempts >= 8) {
+                        return this.findMapHostRoot(doc);
+                    }
+
+                    return null;
                 }
 
                 const selectors = [
