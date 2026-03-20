@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.51
+
+- Stop rewriting embedded layer `url` fields to the ingress prefix in BOM HTML, so basemap and overlay paths remain compatible with BOM's `map_api` concatenation.
+- Rewrite ingress runtime fetches for root `/themes|sites|modules|files|core|misc|profiles|libraries` assets and normalize malformed duplicated ingress mapping URLs.
+
 ## 1.0.50
 
 - Canonicalize the iframe BOM page URL to `/location/...` before BOM boots under ingress, while preserving the ingress base separately for runtime API rewrites.

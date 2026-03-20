@@ -7,6 +7,7 @@
   var LOCAL_RUM_BLOCK = /\/modules\/custom\/bom_rum\/js\/elastic-apm-rum\.umd\.min\.js/i;
   var APM_HOST_MATCH = /(^|\.)apm\.analytics\.bom\.gov\.au$/i;
   var INGRESS_SERVICE_PATH_RE = /^\/(?:api|apikey|blocked-external|v1|mapping|timeseries|overlays|basemaps|locations|places|services|forecasts|weather)\b/i;
+  var LOCAL_ASSET_PATH_RE = /^\/(?:themes|sites|core|misc|profiles|modules|libraries|files)\b/i;
 
   function createApmStub() {
     return {
@@ -104,7 +105,28 @@
   }
 
   function shouldRewriteIngressPath(pathname) {
-    return INGRESS_SERVICE_PATH_RE.test(String(pathname || ""));
+    var text = String(pathname || "");
+    return INGRESS_SERVICE_PATH_RE.test(text) || LOCAL_ASSET_PATH_RE.test(text);
+  }
+
+  function normalizeDuplicatedIngressApiUrl(parsed) {
+    if (!parsed || parsed.origin !== window.location.origin) {
+      return "";
+    }
+
+    var appBasePath = getAppBasePath();
+    if (!appBasePath || appBasePath === "/") {
+      return "";
+    }
+
+    var appBaseNoSlash = appBasePath.endsWith("/") ? appBasePath.slice(0, -1) : appBasePath;
+    var duplicatedPrefix = appBaseNoSlash + "/apikey/v1/mapping" + appBaseNoSlash + "/";
+
+    if (parsed.pathname.indexOf(duplicatedPrefix) !== 0) {
+      return "";
+    }
+
+    return buildAppUrl(parsed.pathname.slice(duplicatedPrefix.length) + parsed.search + parsed.hash);
   }
 
   var BLOCKED_SCRIPT_URL = buildAppUrl("blocked-external/script");
@@ -574,6 +596,11 @@
     }
 
     if (parsed.origin === window.location.origin) {
+      var normalizedDuplicatedIngressUrl = normalizeDuplicatedIngressApiUrl(parsed);
+      if (normalizedDuplicatedIngressUrl) {
+        return normalizedDuplicatedIngressUrl;
+      }
+
       if (appBasePath !== "/" && parsed.pathname.indexOf(appBasePath) === 0) {
         return text;
       }
