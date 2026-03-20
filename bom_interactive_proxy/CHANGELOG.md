@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.49
+
+- Prefer the live `bom-spatial-map` section over the hidden Drupal placeholder when auto-scrolling to trigger BOM's lazy map mount, and refresh wrapper cache-busters to `20260320o`.
+
 ## 1.0.38
 
 - Do not isolate or hide BOM's location placeholder until it contains real map content, and refresh the wrapper cache-buster to `20260320g`.

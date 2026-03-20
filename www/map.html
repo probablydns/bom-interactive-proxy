@@ -359,7 +359,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320n');
+                    locationParams.set('_proxyv', '20260320o');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1715,14 +1715,17 @@
 
             findMapHostRoot(doc) {
                 const selectors = [
-                    '#drupal-location-placeholder',
-                    '[id*="drupal-location-placeholder"]',
-                    '.location-level',
+                    '[data-testid="bom-spatial-map-component"]',
+                    '.bom-spatial-map',
+                    '#weatherMap',
                     '[data-component="bom-spatial-map"]',
                     '[class*="spatial-map"]',
                     '[class*="weather-map"]',
                     '[class*="map-view"]',
-                    '[class*="map-canvas"]'
+                    '[class*="map-canvas"]',
+                    '#drupal-location-placeholder',
+                    '[id*="drupal-location-placeholder"]',
+                    '.location-level'
                 ];
 
                 for (const selector of selectors) {
@@ -1732,7 +1735,7 @@
                     }
 
                     const container = node.closest(
-                        '#drupal-location-placeholder, [id*="drupal-location-placeholder"], .location-level, [data-component="bom-spatial-map"], [class*="spatial-map"], [class*="weather-map"], section, article, main, div'
+                        '[data-testid="bom-spatial-map-component"], .bom-spatial-map, #drupal-location-placeholder, [id*="drupal-location-placeholder"], .location-level, [data-component="bom-spatial-map"], [class*="spatial-map"], [class*="weather-map"], section, article, main, div'
                     );
                     return container || node;
                 }
@@ -1810,6 +1813,13 @@
                 try {
                     const frameWin = doc.defaultView || this.frame.contentWindow;
                     const scrollingElement = doc.scrollingElement || doc.documentElement || doc.body;
+                    if (typeof host.scrollIntoView === 'function') {
+                        try {
+                            host.scrollIntoView({ block: 'center', inline: 'nearest' });
+                        } catch (error) {
+                            host.scrollIntoView();
+                        }
+                    }
                     const rect = typeof host.getBoundingClientRect === 'function'
                         ? host.getBoundingClientRect()
                         : null;
