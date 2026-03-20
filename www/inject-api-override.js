@@ -71,6 +71,14 @@
     }
   }
 
+  function getEsriAssetBaseUrl() {
+    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets/esri/");
+  }
+
+  function getEsriWorkerUrl() {
+    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets/esri/core/workers/RemoteClient.js");
+  }
+
   function rewriteLocalAssetUrl(url) {
     var src = String(url || "");
     var appBasePath = getAppBasePath();
@@ -1020,7 +1028,64 @@
     }, 50);
   }
 
+  function patchEsriConfigObject(config) {
+    var next = config && typeof config === "object" ? config : {};
+    var workers = next.workers && typeof next.workers === "object" ? next.workers : {};
+
+    if (typeof next.assetsPath === "string" && next.assetsPath) {
+      next.assetsPath = rewriteLocalAssetUrl(next.assetsPath);
+    } else {
+      next.assetsPath = getEsriAssetBaseUrl();
+    }
+
+    if (typeof workers.loaderUrl === "string" && workers.loaderUrl) {
+      workers.loaderUrl = rewriteLocalAssetUrl(workers.loaderUrl);
+    }
+
+    if (typeof workers.workerPath === "string" && workers.workerPath) {
+      workers.workerPath = rewriteLocalAssetUrl(workers.workerPath);
+    } else {
+      workers.workerPath = getEsriWorkerUrl();
+    }
+
+    next.workers = workers;
+    return next;
+  }
+
+  function installEsriConfigPatch() {
+    var currentConfig = patchEsriConfigObject(window.esriConfig || {});
+
+    try {
+      Object.defineProperty(window, "esriConfig", {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+          return currentConfig;
+        },
+        set: function (value) {
+          currentConfig = patchEsriConfigObject(value);
+        }
+      });
+      window.esriConfig = currentConfig;
+    } catch (_error) {
+      try {
+        window.esriConfig = currentConfig;
+      } catch (_error2) {
+        // no-op
+      }
+    }
+
+    window.setTimeout(function () {
+      try {
+        window.esriConfig = patchEsriConfigObject(window.esriConfig || currentConfig);
+      } catch (_error3) {
+        // no-op
+      }
+    }, 0);
+  }
+
   bootstrapDrupalSettings();
+  installEsriConfigPatch();
   patchFetch();
   patchXHR();
   patchSendBeacon();

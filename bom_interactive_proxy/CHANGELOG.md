@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.53
+
+- Force ArcGIS worker configuration onto ingress-safe asset URLs before the BOM runtime boots, so worker imports no longer fall back to Home Assistant root paths.
+- Turn town labels back on by default in map-only mode, so ingress restores place names unless `showTownNames=0` is explicitly requested.
+
 ## 1.0.52
 
 - Make the add-on root entrypoint default to interactive and animated map-only mode, matching the working direct URL behavior without extra query params.

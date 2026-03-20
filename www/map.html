@@ -104,7 +104,7 @@
                 this.cleanupEnabled = false;
                 this.mapOnlyEnabled = false;
                 this.mapInteractionEnabled = false;
-                this.showTownNames = false;
+                this.showTownNames = true;
                 this.townLayerEnableAttempts = 0;
                 this.maxTownLayerEnableAttempts = 60;
                 this.forceRain = false;
@@ -284,8 +284,9 @@
                             ? true
                             : !['0', 'false', 'off', 'no'].includes(String(showZoomStatusParam).trim().toLowerCase());
                     const showTownNames =
-                        showTownNamesParam !== null &&
-                        !['0', 'false', 'off', 'no'].includes(String(showTownNamesParam).trim().toLowerCase());
+                        showTownNamesParam === null
+                            ? mapOnly
+                            : !['0', 'false', 'off', 'no'].includes(String(showTownNamesParam).trim().toLowerCase());
                     const animate =
                         animateParam === null
                             ? mapOnly
@@ -359,7 +360,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320r');
+                    locationParams.set('_proxyv', '20260320s');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
