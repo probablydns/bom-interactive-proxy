@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.38
+
+- Do not isolate or hide BOM's location placeholder until it contains real map content, and refresh the wrapper cache-buster to `20260320g`.
+
 ## 1.0.37
 
 - Use BOM's `#drupal-location-placeholder` as the ingress map-host fallback, and refresh the wrapper cache-buster to `20260320f`.

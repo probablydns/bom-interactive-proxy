@@ -357,7 +357,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320f');
+                    locationParams.set('_proxyv', '20260320g');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1737,6 +1737,26 @@
                 return null;
             }
 
+            isPlaceholderMapRoot(node) {
+                return Boolean(
+                    node &&
+                    typeof node.matches === 'function' &&
+                    node.matches('#drupal-location-placeholder, [id*="drupal-location-placeholder"], .location-level')
+                );
+            }
+
+            hasRenderableMapContent(node) {
+                if (!node || typeof node.querySelector !== 'function') {
+                    return false;
+                }
+
+                return Boolean(
+                    node.querySelector(
+                        '.esri-view-root, .esri-view, .esri-view-surface, .mapboxgl-map, .leaflet-container, .ol-viewport, canvas, svg, [class*="map-view"], [class*="map-canvas"]'
+                    )
+                );
+            }
+
             findMapRoot(doc) {
                 if (this.mapOnlyEnabled) {
                     // Under ingress the React map mount often exists before the ArcGIS viewport does.
@@ -1783,8 +1803,17 @@
 
             cleanupBOMPage(doc, mapRoot) {
                 try {
-                    if (this.mapOnlyEnabled && mapRoot) {
-                        this.applyMapOnlyStyles(doc);
+                    const strictRoot = this.findStrictMapRoot(doc);
+                    const placeholderRoot = this.isPlaceholderMapRoot(mapRoot);
+                    const renderableFallback =
+                        placeholderRoot && this.hasRenderableMapContent(mapRoot);
+                    const canIsolateMap =
+                        Boolean(mapRoot) && (!placeholderRoot || Boolean(strictRoot) || renderableFallback);
+
+                    if (this.mapOnlyEnabled && canIsolateMap) {
+                        this.applyMapOnlyStyles(doc, {
+                            hidePreloader: !placeholderRoot || renderableFallback || Boolean(strictRoot)
+                        });
                     }
 
                     // Hide obvious page chrome first.
@@ -1815,7 +1844,7 @@
                     // Only collapse the document to the viewport once a real map root exists.
                     // Before that, leave the page layout alone so the BOM app can finish booting
                     // and so the page stays scrollable instead of trapping a fallback panel.
-                    if (mapRoot) {
+                    if (canIsolateMap) {
                         doc.documentElement.style.setProperty('height', '100%', 'important');
                         doc.body.style.setProperty('height', '100%', 'important');
                         doc.body.style.setProperty('margin', '0', 'important');
@@ -1823,24 +1852,24 @@
                         doc.body.style.setProperty('overflow', 'hidden', 'important');
                     }
 
-                    if (mapRoot && this.mapOnlyEnabled) {
+                    if (canIsolateMap && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);
                         this.setupMapClickSuppression(doc);
                         this.isolateToNode(doc, mapRoot);
                     }
 
-                    if (mapRoot && this.frame.contentWindow) {
+                    if (canIsolateMap && this.frame.contentWindow) {
                         this.frame.contentWindow.dispatchEvent(new Event('resize'));
                     }
 
-                    return Boolean(mapRoot);
+                    return Boolean(strictRoot || canIsolateMap);
                 } catch (err) {
                     console.warn('Could not clean up BOM page:', err);
                     return false;
                 }
             }
 
-            applyMapOnlyStyles(doc) {
+            applyMapOnlyStyles(doc, { hidePreloader = true } = {}) {
                 const styleId = 'bom-map-only-style';
                 let style = doc.getElementById(styleId);
                 if (!style) {
@@ -1922,6 +1951,13 @@
                     }
                 `
                     : '';
+                const loadingSelectors = hidePreloader
+                    ? `
+                    .preloader,
+                    [class*="loader"],
+                    [class*="loading"],
+                `
+                    : '';
 
                 style.textContent = `
                     html, body {
@@ -1933,8 +1969,7 @@
                         background: #000 !important;
                     }
 
-                    #drupal-location-placeholder,
-                    .preloader,
+                    ${loadingSelectors}
                     [class*="quick-link"],
                     [class*="quickLinks"],
                     [class*="legend"],
