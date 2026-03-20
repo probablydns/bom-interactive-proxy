@@ -2,7 +2,7 @@
 
 ## Known-Good Release
 
-- Verified working release: `1.0.64`
+- Verified working release: `1.0.65`
 - Verified working access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
@@ -22,7 +22,7 @@
 - Test harness: `http://HOME_ASSISTANT_HOST:8083/test-harness`
 - Ingress: open the add-on from the Home Assistant sidebar or add-on page
 - `Open Web UI` should open the ingress route
-- Stable dashboard card path: `/app/13fa7b7e_bom_interactive_proxy`
+- Stable dashboard card path fallback: `/app/13fa7b7e_bom_interactive_proxy`
 - Timezone option: set `display_timezone` in the add-on configuration to override the default `Australia/Melbourne`
 
 If port `8083` is in use, change it in app Network settings.
@@ -73,10 +73,11 @@ Card example:
 
 ```yaml
 type: custom:bom-interactive-proxy-card
-base_path: /app/13fa7b7e_bom_interactive_proxy
 place: melbourne
 zoom: 9
 ```
+
+Leave `base_path` blank to let the card resolve the live add-on ingress URL automatically. That keeps the iframe on `/api/hassio_ingress/...` instead of the Home Assistant panel wrapper.
 
 ## Notes
 

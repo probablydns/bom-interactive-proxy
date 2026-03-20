@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.65
+
+- Prefer the live add-on ingress URL in the bundled `BOM Interactive Proxy Card`, so iframe embeds can show the ingress-backed app without Home Assistant chrome when `base_path` is left blank.
+- Keep the stable `/app/13fa7b7e_bom_interactive_proxy` panel path as a fallback when the Supervisor ingress lookup is unavailable.
+
 ## 1.0.64
 
 - Known-good release: Home Assistant ingress and direct `:8083` access are both verified working, including map animation and town labels.

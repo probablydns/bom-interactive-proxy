@@ -2,7 +2,7 @@
 
 Run BOM Interactive Proxy inside Home Assistant as a custom App/Add-on.
 
-Known-good release: `1.0.64`
+Known-good release: `1.0.65`
 
 Verified working in Home Assistant:
 
