@@ -714,8 +714,6 @@
         window.drupalSettings = window.drupalSettings || {};
       }
 
-      window.drupalSettings = pruneSettings(window.drupalSettings) || {};
-
       if (window.drupalSettings.gtm) {
         window.drupalSettings.gtm.tagId = null;
         window.drupalSettings.gtm.tagIds = [];
@@ -736,10 +734,6 @@
         window.drupalSettings.bomRum.enabled = false;
         window.drupalSettings.bomRum.transactionSampleRate = 0;
         window.drupalSettings.bomRum.eventsLimit = 0;
-      }
-
-      if (window.drupalSettings.path) {
-        window.drupalSettings.path.baseUrl = getAppBasePath();
       }
     } catch (_error) {
       window.drupalSettings = window.drupalSettings || {};
