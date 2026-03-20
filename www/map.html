@@ -359,7 +359,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320m');
+                    locationParams.set('_proxyv', '20260320n');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1760,25 +1760,49 @@
                 );
             }
 
+            hasMountedViewportContent(node) {
+                if (!node) {
+                    return false;
+                }
+
+                if (
+                    typeof node.matches === 'function' &&
+                    node.matches('canvas, svg, .mapboxgl-canvas, .leaflet-pane, .ol-layer')
+                ) {
+                    return true;
+                }
+
+                if (typeof node.querySelector !== 'function') {
+                    return false;
+                }
+
+                return Boolean(
+                    node.querySelector(
+                        'canvas, svg, .esri-view-surface canvas, .esri-view-surface svg, .mapboxgl-canvas, .leaflet-pane, .leaflet-layer, .ol-layer canvas'
+                    )
+                );
+            }
+
             maybeNudgeMapHostIntoView(doc, mapRoot = null) {
                 if (!this.mapOnlyEnabled || !doc) {
                     return false;
                 }
 
-                if (this.findStrictMapRoot(doc)) {
+                const strictRoot = this.findStrictMapRoot(doc);
+                if (strictRoot && this.hasMountedViewportContent(strictRoot)) {
                     return false;
                 }
 
-                if (this.cleanupAttempts < 2 || this.mapHostNudgeAttempts >= 12) {
+                if (this.cleanupAttempts < 2 || this.mapHostNudgeAttempts >= 40) {
                     return false;
                 }
 
                 const now = Date.now();
-                if (this.mapHostLastNudgeAt && now - this.mapHostLastNudgeAt < 750) {
+                if (this.mapHostLastNudgeAt && now - this.mapHostLastNudgeAt < 500) {
                     return false;
                 }
 
-                const host = mapRoot || this.findMapHostRoot(doc);
+                const host = strictRoot || mapRoot || this.findMapHostRoot(doc);
                 if (!host) {
                     return false;
                 }
@@ -1802,19 +1826,25 @@
                     const hostTop = rect
                         ? currentScrollTop + rect.top
                         : currentScrollTop + (host.offsetTop || 0);
-                    const targetTop = Math.max(0, Math.round(hostTop - Math.max(64, innerHeight * 0.2)));
+                    const progressiveOffset = Math.min(
+                        Math.round(innerHeight * 0.12) + (this.mapHostNudgeAttempts * 40),
+                        Math.round(innerHeight * 0.5)
+                    );
+                    const targetTop = Math.max(0, Math.round(hostTop - progressiveOffset));
+                    const followupTop = Math.max(targetTop, targetTop + Math.min(180, Math.round(innerHeight * 0.18)));
 
                     if (frameWin && typeof frameWin.scrollTo === 'function') {
                         frameWin.scrollTo(0, targetTop);
+                        frameWin.scrollTo(0, followupTop);
                     }
-                    if (scrollingElement && Number.isFinite(targetTop)) {
-                        scrollingElement.scrollTop = targetTop;
+                    if (scrollingElement && Number.isFinite(followupTop)) {
+                        scrollingElement.scrollTop = followupTop;
                     }
-                    if (doc.documentElement && Number.isFinite(targetTop)) {
-                        doc.documentElement.scrollTop = targetTop;
+                    if (doc.documentElement && Number.isFinite(followupTop)) {
+                        doc.documentElement.scrollTop = followupTop;
                     }
-                    if (doc.body && Number.isFinite(targetTop)) {
-                        doc.body.scrollTop = targetTop;
+                    if (doc.body && Number.isFinite(followupTop)) {
+                        doc.body.scrollTop = followupTop;
                     }
 
                     const dispatchScrollLikeEvent = (target, type) => {
@@ -1844,6 +1874,16 @@
                             clientX,
                             clientY,
                             deltaY: 180,
+                            deltaX: 0,
+                            deltaMode: 0,
+                            view: wheelView
+                        }));
+                        wheelTarget.dispatchEvent(new WheelEvent('wheel', {
+                            bubbles: true,
+                            cancelable: true,
+                            clientX,
+                            clientY: Math.min(clientY + 48, clientY + Math.round(rect.height / 4)),
+                            deltaY: 220,
                             deltaX: 0,
                             deltaMode: 0,
                             view: wheelView
