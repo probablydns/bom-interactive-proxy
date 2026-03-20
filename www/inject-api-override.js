@@ -72,11 +72,11 @@
   }
 
   function getEsriAssetBaseUrl() {
-    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets");
+    return buildAppPath("themes/custom/bom_theme/bom-react/dist/assets");
   }
 
   function getEsriWorkerUrl() {
-    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets/esri/core/workers/RemoteClient.js");
+    return buildAppPath("themes/custom/bom_theme/bom-react/dist/assets/esri/core/workers/RemoteClient.js");
   }
 
   function rewriteLocalAssetUrl(url) {
@@ -217,11 +217,6 @@
   }
 
   function shouldKeepTownLabels() {
-    var fromCookie = readTownLabelFlagFromCookie();
-    if (fromCookie !== null) {
-      return fromCookie;
-    }
-
     var fromCurrentUrl = readTownLabelFlagFromUrl(window.location.href);
     if (fromCurrentUrl !== null) {
       return fromCurrentUrl;
@@ -230,6 +225,11 @@
     var fromReferrer = readTownLabelFlagFromUrl(document.referrer);
     if (fromReferrer !== null) {
       return fromReferrer;
+    }
+
+    var fromCookie = readTownLabelFlagFromCookie();
+    if (fromCookie !== null) {
+      return fromCookie;
     }
 
     var fromStorage = readTownLabelFlagFromStorage();

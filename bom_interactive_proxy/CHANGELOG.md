@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.55
+
+- Inject the corrected BOM asset root into `RemoteClient.js` itself so ArcGIS worker chunks resolve inside ingress, and use same-origin ingress paths for the page-side ESRI worker config.
+- Prefer the live `showTownNames` URL/referrer flag over stale cookie state when deciding whether to keep town labels enabled.
+
 ## 1.0.54
 
 - Fix ArcGIS worker chunk resolution under ingress by setting `esriConfig.assetsPath` to the actual BOM asset root instead of the nested `/assets/esri/` folder.
