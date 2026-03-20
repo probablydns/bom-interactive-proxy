@@ -702,18 +702,6 @@
     return node;
   }
 
-  function patchJSONParse() {
-    if (!window.JSON || typeof window.JSON.parse !== "function") {
-      return;
-    }
-
-    var nativeJSONParse = window.JSON.parse;
-    window.JSON.parse = function (text, reviver) {
-      var parsed = nativeJSONParse.call(window.JSON, text, reviver);
-      return pruneSettings(parsed);
-    };
-  }
-
   function bootstrapDrupalSettings() {
     try {
       var settingsElement = document.querySelector(
@@ -948,7 +936,6 @@
     }, 50);
   }
 
-  patchJSONParse();
   bootstrapDrupalSettings();
   patchFetch();
   patchXHR();
