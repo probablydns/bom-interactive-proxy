@@ -359,7 +359,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320l');
+                    locationParams.set('_proxyv', '20260320m');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1769,31 +1769,85 @@
                     return false;
                 }
 
-                if (this.cleanupAttempts < 2 || this.mapHostNudgeAttempts >= 8) {
+                if (this.cleanupAttempts < 2 || this.mapHostNudgeAttempts >= 12) {
                     return false;
                 }
 
                 const now = Date.now();
-                if (this.mapHostLastNudgeAt && now - this.mapHostLastNudgeAt < 1000) {
+                if (this.mapHostLastNudgeAt && now - this.mapHostLastNudgeAt < 750) {
                     return false;
                 }
 
                 const host = mapRoot || this.findMapHostRoot(doc);
-                if (!host || typeof host.scrollIntoView !== 'function') {
+                if (!host) {
                     return false;
                 }
 
                 try {
-                    host.scrollIntoView({
-                        block: 'center',
-                        inline: 'nearest',
-                        behavior: 'auto'
-                    });
-
                     const frameWin = doc.defaultView || this.frame.contentWindow;
-                    if (frameWin && typeof frameWin.dispatchEvent === 'function') {
-                        frameWin.dispatchEvent(new Event('scroll'));
-                        frameWin.dispatchEvent(new Event('resize'));
+                    const scrollingElement = doc.scrollingElement || doc.documentElement || doc.body;
+                    const rect = typeof host.getBoundingClientRect === 'function'
+                        ? host.getBoundingClientRect()
+                        : null;
+                    const innerHeight =
+                        frameWin && Number.isFinite(frameWin.innerHeight) && frameWin.innerHeight > 0
+                            ? frameWin.innerHeight
+                            : window.innerHeight || 0;
+                    const currentScrollTop =
+                        frameWin && Number.isFinite(frameWin.scrollY)
+                            ? frameWin.scrollY
+                            : scrollingElement && Number.isFinite(scrollingElement.scrollTop)
+                                ? scrollingElement.scrollTop
+                                : 0;
+                    const hostTop = rect
+                        ? currentScrollTop + rect.top
+                        : currentScrollTop + (host.offsetTop || 0);
+                    const targetTop = Math.max(0, Math.round(hostTop - Math.max(64, innerHeight * 0.2)));
+
+                    if (frameWin && typeof frameWin.scrollTo === 'function') {
+                        frameWin.scrollTo(0, targetTop);
+                    }
+                    if (scrollingElement && Number.isFinite(targetTop)) {
+                        scrollingElement.scrollTop = targetTop;
+                    }
+                    if (doc.documentElement && Number.isFinite(targetTop)) {
+                        doc.documentElement.scrollTop = targetTop;
+                    }
+                    if (doc.body && Number.isFinite(targetTop)) {
+                        doc.body.scrollTop = targetTop;
+                    }
+
+                    const dispatchScrollLikeEvent = (target, type) => {
+                        if (!target || typeof target.dispatchEvent !== 'function') {
+                            return;
+                        }
+                        try {
+                            target.dispatchEvent(new Event(type, { bubbles: false, cancelable: false }));
+                        } catch (error) {
+                            // Ignore synthetic event failures.
+                        }
+                    };
+
+                    dispatchScrollLikeEvent(frameWin, 'scroll');
+                    dispatchScrollLikeEvent(doc, 'scroll');
+                    dispatchScrollLikeEvent(scrollingElement, 'scroll');
+                    dispatchScrollLikeEvent(frameWin, 'resize');
+
+                    const wheelTarget = scrollingElement || doc.body || host;
+                    const wheelView = frameWin || window;
+                    if (wheelTarget && rect && typeof wheelTarget.dispatchEvent === 'function') {
+                        const clientX = Math.round(rect.left + Math.max(24, rect.width / 2));
+                        const clientY = Math.round(Math.max(24, rect.top + Math.min(96, Math.max(24, rect.height / 3))));
+                        wheelTarget.dispatchEvent(new WheelEvent('wheel', {
+                            bubbles: true,
+                            cancelable: true,
+                            clientX,
+                            clientY,
+                            deltaY: 180,
+                            deltaX: 0,
+                            deltaMode: 0,
+                            view: wheelView
+                        }));
                     }
 
                     this.mapHostNudgeAttempts += 1;
