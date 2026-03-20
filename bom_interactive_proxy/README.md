@@ -21,7 +21,7 @@ Install from Home Assistant repository URL:
 
 - `https://github.com/probablydns/bom-interactive-proxy`
 
-For deployment methods, parameter reference, and dashboard card setup, see:
+For deployment methods, parameter reference, and `BOM Interactive Proxy Card` dashboard setup, see:
 
 - [README.md](../README.md)
 - [DOCS.md](./DOCS.md)

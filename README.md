@@ -25,7 +25,7 @@ If you are debugging older behavior, first confirm the live response header is `
 - `/map` direct map page (advanced use)
 - `/map-only` legacy redirect to `/`
 - `/map-only.html` legacy redirect to `/`
-- `/bom-interactive-proxy-card.js` Lovelace custom card resource
+- `/bom-interactive-proxy-card.js` `BOM Interactive Proxy Card` Lovelace resource
 - `/test-harness` smoke test page
 - `/debug-harness` diagnostics page
 - `/health` health check (`OK`)
@@ -199,7 +199,10 @@ The add-on now supports Home Assistant ingress. That is the correct route if you
 - If Home Assistant Cloud is enabled, ingress is the path that can be exposed through the Home Assistant UI.
 - Ingress keeps the app under Home Assistant auth instead of exposing a separate raw port.
 
-## Home Assistant Custom Card
+## BOM Interactive Proxy Card
+
+In HACS and the Home Assistant card picker, this card is named `BOM Interactive Proxy Card`.
+It is separate from `BOM Radar Card`.
 
 Add the Lovelace resource:
 

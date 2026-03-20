@@ -57,7 +57,10 @@ You can publish either:
 
 Ingress is preferred for the Home Assistant-native experience.
 
-## Custom Card
+## BOM Interactive Proxy Card
+
+In HACS and the Home Assistant card picker, this card is named `BOM Interactive Proxy Card`.
+It is separate from `BOM Radar Card`.
 
 Lovelace resource:
 
