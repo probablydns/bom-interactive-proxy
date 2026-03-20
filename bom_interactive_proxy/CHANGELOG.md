@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.56
+
+- Replace ArcGIS worker chunk loading inside ingress with a same-origin credentialed XHR path in `RemoteClient.js`, so worker chunk fetches no longer depend on `importScripts(...)` auth behavior under Home Assistant ingress.
+- Refresh ingress cache markers to `20260320v`.
+
 ## 1.0.55
 
 - Inject the corrected BOM asset root into `RemoteClient.js` itself so ArcGIS worker chunks resolve inside ingress, and use same-origin ingress paths for the page-side ESRI worker config.
