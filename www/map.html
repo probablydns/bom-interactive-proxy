@@ -288,11 +288,11 @@
                         !['0', 'false', 'off', 'no'].includes(String(showTownNamesParam).trim().toLowerCase());
                     const animate =
                         animateParam === null
-                            ? !mapOnly
+                            ? mapOnly
                             : !['0', 'false', 'off', 'no'].includes(String(animateParam).trim().toLowerCase());
                     const interactive =
                         interactiveParam === null
-                            ? false
+                            ? mapOnly
                             : !['0', 'false', 'off', 'no'].includes(String(interactiveParam).trim().toLowerCase());
                     const animateMode = this.parseAnimateMode(animateModeParam);
                     const animateIntervalMs = this.parseAnimateInterval(animateIntervalParam);
@@ -359,7 +359,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320q');
+                    locationParams.set('_proxyv', '20260320r');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -2005,7 +2005,11 @@
 
                     if (canIsolateMap && this.mapOnlyEnabled) {
                         this.setupViewMoreSuppression(doc);
-                        this.setupMapClickSuppression(doc);
+                        if (!this.mapInteractionEnabled) {
+                            this.setupMapClickSuppression(doc);
+                        } else {
+                            this.stopMapClickSuppression();
+                        }
                         this.isolateToNode(doc, mapRoot);
                     }
 

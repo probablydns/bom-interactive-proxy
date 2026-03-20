@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.52
+
+- Make the add-on root entrypoint default to interactive and animated map-only mode, matching the working direct URL behavior without extra query params.
+- Rewrite BOM theme and Drupal aggregate JavaScript asset-root strings so ArcGIS worker and weather-mood assets stay under the current ingress path.
+
 ## 1.0.51
 
 - Stop rewriting embedded layer `url` fields to the ingress prefix in BOM HTML, so basemap and overlay paths remain compatible with BOM's `map_api` concatenation.
