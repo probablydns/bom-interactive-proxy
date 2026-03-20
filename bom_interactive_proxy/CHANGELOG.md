@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.50
+
+- Canonicalize the iframe BOM page URL to `/location/...` before BOM boots under ingress, while preserving the ingress base separately for runtime API rewrites.
+
 ## 1.0.49
 
 - Prefer the live `bom-spatial-map` section over the hidden Drupal placeholder when auto-scrolling to trigger BOM's lazy map mount, and refresh wrapper cache-busters to `20260320o`.

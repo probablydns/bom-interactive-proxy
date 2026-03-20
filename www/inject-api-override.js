@@ -31,6 +31,11 @@
   }
 
   function getAppBasePath() {
+    var explicitIngressBase = window.BOM_PROXY_INGRESS_BASE;
+    if (typeof explicitIngressBase === "string" && explicitIngressBase) {
+      return explicitIngressBase.endsWith("/") ? explicitIngressBase : explicitIngressBase + "/";
+    }
+
     var path = String(window.location.pathname || "");
     var ingressMatch = path.match(/^\/api\/hassio_ingress\/[^/]+/);
     if (ingressMatch && ingressMatch[0]) {
