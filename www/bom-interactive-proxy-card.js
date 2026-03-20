@@ -154,7 +154,7 @@
   }
 
   async function fetchAddonInfo(hass, slugCandidates) {
-    if (!hass || typeof hass.callApi !== "function") {
+    if (!hass) {
       return null;
     }
 
@@ -166,13 +166,12 @@
       }
 
       var endpoints = [
-        "hassio/addons/" + encodeURIComponent(slug) + "/info",
-        "supervisor/addons/" + encodeURIComponent(slug) + "/info"
+        "/addons/" + encodeURIComponent(slug) + "/info"
       ];
 
       for (var j = 0; j < endpoints.length; j += 1) {
         try {
-          var payload = await hass.callApi("GET", endpoints[j]);
+          var payload = await callSupervisorApi(hass, endpoints[j], "get");
           if (payload) {
             return payload;
           }
@@ -183,6 +182,53 @@
     }
 
     return null;
+  }
+
+  async function callSupervisorApi(hass, endpoint, method, data) {
+    if (!hass) {
+      return null;
+    }
+
+    if (hass.connection && typeof hass.connection.sendMessagePromise === "function") {
+      var message = {
+        type: "supervisor/api",
+        endpoint: endpoint,
+        method: method || "get"
+      };
+
+      if (data && typeof data === "object") {
+        message.data = data;
+      }
+
+      return await hass.connection.sendMessagePromise(message);
+    }
+
+    if (typeof hass.callApi === "function") {
+      var path = "hassio/" + String(endpoint || "").replace(/^\/+/, "");
+      return await hass.callApi(String(method || "get").toUpperCase(), path, data);
+    }
+
+    return null;
+  }
+
+  function writeIngressSessionCookie(session) {
+    var normalized = normalizeText(session);
+    if (!normalized || typeof document === "undefined") {
+      return;
+    }
+
+    var secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = "ingress_session=" + encodeURIComponent(normalized) + "; path=/; SameSite=Lax" + secure;
+  }
+
+  async function ensureIngressSession(hass) {
+    var payload = await callSupervisorApi(hass, "/ingress/session", "post");
+    var info = unpackApiPayload(payload);
+    var session = normalizeText(info.session);
+    if (session) {
+      writeIngressSessionCookie(session);
+    }
+    return session;
   }
 
   function setQueryBoolean(params, key, value) {
@@ -358,6 +404,7 @@
       this._resolvingIngress = true;
       this._render();
 
+      await ensureIngressSession(this._hass);
       var payload = await fetchAddonInfo(this._hass, addonSlugs(this._config));
       if (requestId !== this._ingressRequestId) {
         return;

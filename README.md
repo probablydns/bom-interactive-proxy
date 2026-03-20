@@ -4,12 +4,12 @@ Interactive BOM weather map proxy for local browser use, Home Assistant dashboar
 
 ## Known-Good Release
 
-- Verified working release: `1.0.66`
+- Verified working release: `1.0.67`
 - Verified access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
 
-If you are debugging older behavior, first confirm the live response header is `X-BOM-Proxy-Version: 1.0.66`.
+If you are debugging older behavior, first confirm the live response header is `X-BOM-Proxy-Version: 1.0.67`.
 
 ## What This Service Does
 

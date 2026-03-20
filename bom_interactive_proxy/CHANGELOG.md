@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.67
+
+- Resolve add-on ingress through Home Assistant's `supervisor/api` websocket endpoint instead of the plain REST proxy, so Lovelace cards can access the non-admin-safe add-on info path that exposes `ingress_entry` and `ingress_url`.
+- Create and store a fresh `ingress_session` cookie before loading the raw ingress iframe, matching the session validation that Home Assistant's ingress handler requires.
+
 ## 1.0.66
 
 - Fix bundled card ingress auto-resolution by looking up the add-on with the full Home Assistant add-on ID (`13fa7b7e_bom_interactive_proxy`) instead of the plain internal slug.
