@@ -11,7 +11,7 @@
     if (!window.customCards.some(function (card) { return card.type === CARD_TYPE; })) {
       window.customCards.push({
         type: CARD_TYPE,
-        name: "BOM Interactive Proxy",
+        name: "BOM Interactive Proxy Card",
         description: "Embeds the BOM Interactive Proxy map using a stable Home Assistant app path or direct URL."
       });
     }
