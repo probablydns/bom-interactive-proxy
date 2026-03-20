@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOM Interactive Proxy Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .test-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .config-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            border-left: 4px solid #667eea;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .test-item h3 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .map-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .location-input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .log-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌦️ BOM Interactive Proxy Test</h1>
+            <p>Test the proxy before integrating with Home Assistant</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Configuration & Status</h2>
+            <div class="config-info" id="configInfo">
+                <strong>Proxy URL:</strong> <span id="proxyUrl">Detecting...</span><br>
+                <strong>Location:</strong> Melbourne, VIC<br>
+                <strong>BOM Path:</strong> australia/victoria/central/bvic_pt042-melbourne
+            </div>
+
+            <div class="test-grid">
+                <div class="test-item">
+                    <h3>🏥 Health Check</h3>
+                    <div>Proxy service status</div>
+                    <div class="status loading" id="healthStatus">Testing...</div>
+                </div>
+                <div class="test-item">
+                    <h3>🔗 CORS Headers</h3>
+                    <div>Cross-origin access</div>
+                    <div class="status loading" id="corsStatus">Testing...</div>
+                </div>
+                <div class="test-item">
+                    <h3>🗺️ Map Page</h3>
+                    <div>Custom map endpoint</div>
+                    <div class="status loading" id="mapStatus">Testing...</div>
+                </div>
+                <div class="test-item">
+                    <h3>🌐 BOM Proxy</h3>
+                    <div>Bureau of Meteorology</div>
+                    <div class="status loading" id="bomStatus">Testing...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗺️ Interactive Map Test</h2>
+            <p>This embeds the BOM interactive map exactly like it would appear in Home Assistant:</p>
+            
+            <div class="controls">
+                <input type="text" class="location-input" id="locationInput" value="melbourne" placeholder="Enter location">
+                <button class="btn btn-primary" onclick="loadLocation()">Load Location</button>
+                <button class="btn btn-secondary" onclick="refreshMap()">Refresh Map</button>
+                <button class="btn btn-secondary" onclick="toggleFullscreen()">Toggle Fullscreen</button>
+            </div>
+
+            <div class="map-container" id="mapContainer">
+                <iframe id="mapFrame" class="map-frame" style="display: none;"></iframe>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <span>Loading Interactive BOM Map...</span>
+                </div>
+            </div>
+
+            <div id="errorContainer"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Debug Information</h2>
+            <div class="log-output" id="debugLog">
+                Initializing BOM Interactive Proxy test...<br>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BOMProxyTest {
+            constructor() {
+                this.proxyUrl = this.detectProxyUrl();
+                this.init();
+            }
+
+            detectProxyUrl() {
+                // Auto-detect proxy URL based on current page location
+                const hostname = window.location.hostname;
+                let port = '8083';
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                    return `http://localhost:${port}`;
+                } else {
+                    // Assume same host, different port
+                    return `http://${hostname}:${port}`;
+                }
+            }
+
+            async init() {
+                document.getElementById('proxyUrl').textContent = this.proxyUrl;
+                this.log(`🚀 Starting BOM Proxy tests for: ${this.proxyUrl}`);
+                
+                await this.runTests();
+                await this.loadMap();
+            }
+
+            async runTests() {
+                const tests = [
+                    { name: 'Health Check', id: 'healthStatus', endpoint: '/health' },
+                    { name: 'Map Page', id: 'mapStatus', endpoint: '/map' },
+                    { name: 'BOM Proxy', id: 'bomStatus', endpoint: '/location/australia' }
+                ];
+
+                for (const test of tests) {
+                    try {
+                        this.log(`🧪 Testing ${test.name}...`);
+                        const response = await fetch(`${this.proxyUrl}${test.endpoint}`);
+                        
+                        if (response.ok) {
+                            this.updateStatus(test.id, 'success', `✅ ${response.status} OK`);
+                            this.log(`✅ ${test.name} passed (${response.status})`);
+                        } else {
+                            this.updateStatus(test.id, 'error', `❌ ${response.status}`);
+                            this.log(`❌ ${test.name} failed (${response.status})`);
+                        }
+                    } catch (error) {
+                        this.updateStatus(test.id, 'error', '❌ Connection failed');
+                        this.log(`❌ ${test.name} error: ${error.message}`);
+                    }
+                }
+
+                // Test CORS headers specifically
+                try {
+                    const response = await fetch(`${this.proxyUrl}/health`);
+                    const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                    if (corsHeader) {
+                        this.updateStatus('corsStatus', 'success', '✅ CORS enabled');
+                        this.log(`✅ CORS headers present: ${corsHeader}`);
+                    } else {
+                        this.updateStatus('corsStatus', 'error', '❌ CORS missing');
+                        this.log(`❌ CORS headers missing`);
+                    }
+                } catch (error) {
+                    this.updateStatus('corsStatus', 'error', '❌ CORS test failed');
+                    this.log(`❌ CORS test error: ${error.message}`);
+                }
+            }
+
+            async loadMap(location = 'melbourne') {
+                const mapFrame = document.getElementById('mapFrame');
+                const loading = document.getElementById('loadingOverlay');
+                const errorContainer = document.getElementById('errorContainer');
+                
+                this.log(`🗺️ Loading interactive map for: ${location}`);
+                
+                // Clear previous errors
+                errorContainer.innerHTML = '';
+                
+                // Build map URL
+                const mapUrl = `${this.proxyUrl}/map?location=${location}&state=vic&path=australia/victoria/central/bvic_pt042-melbourne`;
+                
+                this.log(`📍 Map URL: ${mapUrl}`);
+                
+                // Set up iframe handlers
+                mapFrame.onload = () => {
+                    this.log(`✅ Map loaded successfully`);
+                    loading.style.display = 'none';
+                    mapFrame.style.display = 'block';
+                };
+                
+                mapFrame.onerror = () => {
+                    this.log(`❌ Map failed to load`);
+                    this.showError('Failed to load interactive map. Check proxy connection.');
+                };
+                
+                // Load the map
+                mapFrame.src = mapUrl;
+                
+                // Timeout handling
+                setTimeout(() => {
+                    if (loading.style.display !== 'none') {
+                        this.log(`⏱️ Map loading timeout`);
+                        this.showError('Map loading timeout. Check that the proxy is running and accessible.');
+                    }
+                }, 15000);
+            }
+
+            updateStatus(elementId, status, text) {
+                const element = document.getElementById(elementId);
+                element.className = `status ${status}`;
+                element.textContent = text;
+            }
+
+            showError(message) {
+                const errorContainer = document.getElementById('errorContainer');
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>❌ Error:</strong> ${message}
+                        <br><br>
+                        <strong>Troubleshooting:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Ensure proxy is running: <code>docker run -p 8083:80 ghcr.io/probablydns/bom-interactive-proxy:latest</code></li>
+                            <li>Check proxy URL: <code>${this.proxyUrl}</code></li>
+                            <li>Verify port 8083 is accessible</li>
+                            <li>Check browser console for additional errors</li>
+                        </ul>
+                    </div>
+                `;
+                
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+
+            log(message) {
+                const logElement = document.getElementById('debugLog');
+                const timestamp = new Date().toLocaleTimeString();
+                logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        }
+
+        // Global functions for UI controls
+        function loadLocation() {
+            const location = document.getElementById('locationInput').value || 'melbourne';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('mapFrame').style.display = 'none';
+            window.bomTest.loadMap(location);
+        }
+
+        function refreshMap() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('mapFrame').style.display = 'none';
+            const mapFrame = document.getElementById('mapFrame');
+            mapFrame.src = mapFrame.src; // Reload iframe
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('mapContainer');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.bomTest = new BOMProxyTest();
+        });
+    </script>
+</body>
+</html>

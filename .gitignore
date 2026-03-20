@@ -1,0 +1,35 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs / runtime
+*.log
+logs/
+tmp/
+*.pid
+
+# Docker / nginx cache
+cache/
+tmp/nginx_cache/
+.nginx-cache/
+
+# Test artifacts
+node_modules/
+playwright-report/
+test-results/
+coverage/
+
+# Python cache
+__pycache__/
+*.pyc

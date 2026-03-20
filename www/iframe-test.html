@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOM Direct Embed Test</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .test-container { max-width: 1200px; margin: 0 auto; }
+        .iframe-container { 
+            width: 100%; 
+            height: 600px; 
+            border: 2px solid #333; 
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+        .info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🌦️ BOM Direct Embed Test</h1>
+        
+        <div class="info">
+            <strong>💡 This approach works because:</strong>
+            <ul>
+                <li>✅ Browser loads BOM directly (not automation)</li>
+                <li>✅ No server-side proxying that triggers bot detection</li>
+                <li>✅ Respects BOM's terms of service</li>
+                <li>✅ Works exactly like visiting BOM in a new tab</li>
+            </ul>
+        </div>
+
+        <h2>Direct BOM Embed:</h2>
+        <div class="iframe-container">
+            <iframe src="https://www.bom.gov.au/location/australia/victoria/central/bvic_pt042-melbourne" 
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    loading="lazy">
+            </iframe>
+        </div>
+        
+        <div class="info">
+            <strong>🎯 For Home Assistant:</strong><br>
+            This same iframe approach can be embedded in HA using a simple iframe card - 
+            no proxy server needed!
+        </div>
+    </div>
+</body>
+</html>

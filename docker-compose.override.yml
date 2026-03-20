@@ -1,0 +1,6 @@
+# Override to use simplified nginx config for immediate testing
+services:
+  bom-interactive-proxy:
+    build: .
+    volumes:
+      - ./nginx-simple.conf:/etc/nginx/conf.d/default.conf:ro

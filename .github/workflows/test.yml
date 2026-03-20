@@ -1,0 +1,69 @@
+name: Test BOM Interactive Proxy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t bom-proxy-test .
+
+      - name: Start proxy service
+        run: |
+          docker run -d --name bom-proxy -p 8083:80 bom-proxy-test
+          sleep 15
+
+      - name: Test health endpoint
+        run: |
+          echo "🏥 Testing health endpoint..."
+          curl -f http://localhost:8083/health
+          echo "✅ Health check passed"
+
+      - name: Test CORS headers
+        run: |
+          echo "🔗 Testing CORS headers..."
+          CORS=$(curl -s -I http://localhost:8083/health | grep -i "access-control-allow-origin" || echo "")
+          if [ -z "$CORS" ]; then
+            echo "❌ CORS headers missing"
+            exit 1
+          fi
+          echo "✅ CORS headers present: $CORS"
+
+      - name: Test map page
+        run: |
+          echo "🗺️ Testing map page..."
+          curl -f http://localhost:8083/map
+          echo "✅ Map page accessible"
+
+      - name: Test BOM proxy (basic)
+        run: |
+          echo "🌐 Testing BOM proxy..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/location/australia)
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+            echo "✅ BOM proxy responding (HTTP $STATUS)"
+          else
+            echo "❌ BOM proxy failed (HTTP $STATUS)"
+            exit 1
+          fi
+
+      - name: Show proxy logs
+        if: failure()
+        run: |
+          echo "📋 Proxy logs:"
+          docker logs bom-proxy
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop bom-proxy || true
+          docker rm bom-proxy || true

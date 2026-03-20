@@ -1,0 +1,26 @@
+services:
+  bom-interactive-proxy:
+    build: .
+    container_name: bom-interactive-proxy-dev
+    ports:
+      - "${HOST_PORT:-8083}:80"
+    environment:
+      - TZ=Australia/Melbourne
+      - NGINX_CACHE_PATH=${CACHE_CONTAINER_PATH:-/tmp/nginx_cache}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Optional: persist nginx cache (customizable host/container paths)
+      - ${CACHE_HOST_PATH:-./cache}:${CACHE_CONTAINER_PATH:-/tmp/nginx_cache}
+      # Mount source for development
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./www:/usr/share/nginx/html:ro
+    labels:
+      - "com.docker.compose.project=bom-proxy-dev"
+      - "description=BOM Interactive Weather Map Proxy (Development)"
