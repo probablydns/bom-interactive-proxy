@@ -203,6 +203,11 @@
                     return `${ingressMatch[0]}/`;
                 }
 
+                const addonAppMatch = path.match(/^\/app\/[^/]+/);
+                if (addonAppMatch && addonAppMatch[0]) {
+                    return `${addonAppMatch[0]}/`;
+                }
+
                 const locationMarker = '/location/';
                 const locationIndex = path.indexOf(locationMarker);
 
@@ -227,8 +232,10 @@
                     return;
                 }
 
+                const appBasePath = this.getAppBasePath();
+
                 // Ingress embeds are more fragile than direct access and do not need SW caching.
-                if (this.getAppBasePath().indexOf('/api/hassio_ingress/') === 0) {
+                if (appBasePath.indexOf('/api/hassio_ingress/') === 0 || appBasePath.indexOf('/app/') === 0) {
                     return;
                 }
 
@@ -257,7 +264,8 @@
                     const isRootEntryPoint =
                         pathName === '/' ||
                         pathName === '/index.html' ||
-                        /^\/api\/hassio_ingress\/[^/]+\/?$/.test(pathName);
+                        /^\/api\/hassio_ingress\/[^/]+\/?$/.test(pathName) ||
+                        /^\/app\/[^/]+\/?$/.test(pathName);
                     const bomPath = await this.resolveLocationPath(params);
                     const cleanup = params.get('cleanup') === '1';
                     const mapOnly = params.get('mapOnly') === '1' || isRootEntryPoint;

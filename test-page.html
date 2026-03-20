@@ -159,51 +159,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .controls {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a6fd8;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-
-        .location-input {
-            padding: 8px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-right: 10px;
-        }
-
         .error-message {
             background: #f8d7da;
             color: #721c24;
@@ -268,13 +223,6 @@
         <div class="test-section">
             <h2>🗺️ Interactive Map Test</h2>
             <p>This embeds the BOM interactive map exactly like it would appear in Home Assistant:</p>
-            
-            <div class="controls">
-                <input type="text" class="location-input" id="locationInput" value="melbourne" placeholder="Enter location">
-                <button class="btn btn-primary" onclick="loadLocation()">Load Location</button>
-                <button class="btn btn-secondary" onclick="refreshMap()">Refresh Map</button>
-                <button class="btn btn-secondary" onclick="toggleFullscreen()">Toggle Fullscreen</button>
-            </div>
 
             <div class="map-container" id="mapContainer">
                 <iframe id="mapFrame" class="map-frame" style="display: none;"></iframe>
@@ -434,30 +382,6 @@
                 const timestamp = new Date().toLocaleTimeString();
                 logElement.innerHTML += `[${timestamp}] ${message}<br>`;
                 logElement.scrollTop = logElement.scrollHeight;
-            }
-        }
-
-        // Global functions for UI controls
-        function loadLocation() {
-            const location = document.getElementById('locationInput').value || 'melbourne';
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            document.getElementById('mapFrame').style.display = 'none';
-            window.bomTest.loadMap(location);
-        }
-
-        function refreshMap() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            document.getElementById('mapFrame').style.display = 'none';
-            const mapFrame = document.getElementById('mapFrame');
-            mapFrame.src = mapFrame.src; // Reload iframe
-        }
-
-        function toggleFullscreen() {
-            const container = document.getElementById('mapContainer');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen();
-            } else {
-                document.exitFullscreen();
             }
         }
 

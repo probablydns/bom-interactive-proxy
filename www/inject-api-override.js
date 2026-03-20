@@ -43,6 +43,11 @@
       return ingressMatch[0] + "/";
     }
 
+    var addonAppMatch = path.match(/^\/app\/[^/]+/);
+    if (addonAppMatch && addonAppMatch[0]) {
+      return addonAppMatch[0] + "/";
+    }
+
     var marker = "/location/";
     var locationIndex = path.indexOf(marker);
     if (locationIndex >= 0) {

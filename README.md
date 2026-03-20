@@ -25,6 +25,7 @@ If you are debugging older behavior, first confirm the live response header is `
 - `/map` direct map page (advanced use)
 - `/map-only` legacy redirect to `/`
 - `/map-only.html` legacy redirect to `/`
+- `/bom-interactive-proxy-card.js` Lovelace custom card resource
 - `/test-harness` smoke test page
 - `/debug-harness` diagnostics page
 - `/health` health check (`OK`)
@@ -194,8 +195,29 @@ The add-on now supports Home Assistant ingress. That is the correct route if you
 
 - Open the add-on from the Home Assistant sidebar or add-on page.
 - `Open Web UI` should open the ingress route, not the raw `:8083` port.
+- The runtime and custom card also support the stable Home Assistant panel path `/app/13fa7b7e_bom_interactive_proxy`.
 - If Home Assistant Cloud is enabled, ingress is the path that can be exposed through the Home Assistant UI.
 - Ingress keeps the app under Home Assistant auth instead of exposing a separate raw port.
+
+## Home Assistant Custom Card
+
+Add the Lovelace resource:
+
+```yaml
+url: /app/13fa7b7e_bom_interactive_proxy/bom-interactive-proxy-card.js
+type: module
+```
+
+Then add the card:
+
+```yaml
+type: custom:bom-interactive-proxy-card
+base_path: /app/13fa7b7e_bom_interactive_proxy
+place: melbourne
+zoom: 9
+```
+
+The visual editor keeps a local draft while typing and only refreshes the preview after a field loses focus or a select changes.
 
 ### `cloudflared` add-on
 

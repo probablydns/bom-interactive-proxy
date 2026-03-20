@@ -77,56 +77,6 @@
       color: var(--ink-1);
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.7rem;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 0.9rem;
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.55rem;
-      align-items: center;
-    }
-
-    .row label {
-      font-weight: 600;
-      color: var(--ink-1);
-      font-size: 0.92rem;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      min-width: 260px;
-      border: 1px solid #bdd4cb;
-      border-radius: 10px;
-      padding: 0.5rem 0.6rem;
-      font: inherit;
-      color: var(--ink-0);
-      background: #fbfefd;
-    }
-
-    button {
-      border: 1px solid #0a7268;
-      border-radius: 10px;
-      padding: 0.5rem 0.8rem;
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--teal);
-      color: #fff;
-    }
-
-    button.secondary {
-      background: var(--rust);
-      border-color: #a55120;
-    }
-
     .test-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -252,17 +202,6 @@
       </div>
     </section>
 
-    <section class="controls">
-      <div class="row">
-        <label for="bomPath">BOM Location Path</label>
-        <input id="bomPath" type="text" value="australia/victoria/central/bvic_pt042-melbourne">
-      </div>
-      <div class="row">
-        <button id="runBtn" type="button">Run All Checks</button>
-        <button id="reloadBtn" class="secondary" type="button">Reload Map</button>
-      </div>
-    </section>
-
     <section class="test-grid">
       <article class="test-card">
         <h2>Health</h2>
@@ -321,11 +260,10 @@
 
     const logEl = document.getElementById("log");
     const frame = document.getElementById("mapFrame");
-    const bomPathInput = document.getElementById("bomPath");
     const frameUrlLabel = document.getElementById("frameUrlLabel");
     const originLabel = document.getElementById("originLabel");
-    const runBtn = document.getElementById("runBtn");
-    const reloadBtn = document.getElementById("reloadBtn");
+    const queryParams = new URLSearchParams(window.location.search);
+    const defaultBomPath = (queryParams.get("path") || "").trim() || "australia/victoria/central/bvic_pt042-melbourne";
     let renderResolver = null;
     let renderTimer = null;
 
@@ -483,7 +421,7 @@
     }
 
     function buildMapUrl() {
-      const bomPath = bomPathInput.value.trim() || "australia/victoria/central/bvic_pt042-melbourne";
+      const bomPath = defaultBomPath;
       const url = appUrl(`/map?path=${encodeURIComponent(bomPath)}`);
       return { bomPath, url };
     }
@@ -496,7 +434,6 @@
     }
 
     async function runAll() {
-      runBtn.disabled = true;
       resetStatuses();
       log("Running checks...");
 
@@ -515,7 +452,6 @@
       const fullResults = [...results, renderOk];
       const passed = fullResults.filter(Boolean).length;
       log(`Checks complete: ${passed}/${fullResults.length} passed`);
-      runBtn.disabled = false;
     }
 
     frame.addEventListener("load", () => {
@@ -542,13 +478,6 @@
         const detail = data.detail || "Map page reported an unknown error";
         completeRenderWatch(false, `Map page error: ${detail}`);
       }
-    });
-
-    runBtn.addEventListener("click", runAll);
-    reloadBtn.addEventListener("click", async () => {
-      const renderWatch = beginRenderWatch();
-      loadMap();
-      await renderWatch;
     });
 
     runAll();

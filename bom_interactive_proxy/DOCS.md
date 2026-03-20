@@ -22,6 +22,7 @@
 - Test harness: `http://HOME_ASSISTANT_HOST:8083/test-harness`
 - Ingress: open the add-on from the Home Assistant sidebar or add-on page
 - `Open Web UI` should open the ingress route
+- Stable dashboard card path: `/app/13fa7b7e_bom_interactive_proxy`
 - Timezone option: set `display_timezone` in the add-on configuration to override the default `Australia/Melbourne`
 
 If port `8083` is in use, change it in app Network settings.
@@ -56,9 +57,28 @@ You can publish either:
 
 Ingress is preferred for the Home Assistant-native experience.
 
+## Custom Card
+
+Lovelace resource:
+
+```yaml
+url: /app/13fa7b7e_bom_interactive_proxy/bom-interactive-proxy-card.js
+type: module
+```
+
+Card example:
+
+```yaml
+type: custom:bom-interactive-proxy-card
+base_path: /app/13fa7b7e_bom_interactive_proxy
+place: melbourne
+zoom: 9
+```
+
 ## Notes
 
 - Use `/` for new links; `/map-only` is kept only as a redirect.
+- The custom card editor commits on blur/change, so typing no longer reloads the preview on every keypress.
 - `/` defaults to map-only radar mode with `showFrameTime=1`, `showTownNames=1`, `interactive=1`, and `animate=1` unless explicitly overridden or disabled by `lowPower=1`.
 - `lowPower=1` disables animation and frame-time overlay to reduce load.
 - `animateMode=native` uses BOM playback; `animateMode=throttle` steps frames at fixed intervals.
