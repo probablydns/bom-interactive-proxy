@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.57
+
+- Normalize ArcGIS worker chunk URLs against the live `RemoteClient.js` ingress URL before loading them, so credentialed chunk fetches no longer fail with `XMLHttpRequest.open(...): Invalid URL`.
+- Refresh ingress cache markers to `20260320w`.
+
 ## 1.0.56
 
 - Replace ArcGIS worker chunk loading inside ingress with a same-origin credentialed XHR path in `RemoteClient.js`, so worker chunk fetches no longer depend on `importScripts(...)` auth behavior under Home Assistant ingress.
