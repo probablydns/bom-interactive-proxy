@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.54
+
+- Fix ArcGIS worker chunk resolution under ingress by setting `esriConfig.assetsPath` to the actual BOM asset root instead of the nested `/assets/esri/` folder.
+- Pass town-name overlay requests through by default and only suppress them when `bom_show_town_names=0` is explicitly set.
+
 ## 1.0.53
 
 - Force ArcGIS worker configuration onto ingress-safe asset URLs before the BOM runtime boots, so worker imports no longer fall back to Home Assistant root paths.

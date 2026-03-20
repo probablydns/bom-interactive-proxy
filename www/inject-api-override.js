@@ -72,7 +72,7 @@
   }
 
   function getEsriAssetBaseUrl() {
-    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets/esri/");
+    return buildAppUrl("themes/custom/bom_theme/bom-react/dist/assets");
   }
 
   function getEsriWorkerUrl() {
