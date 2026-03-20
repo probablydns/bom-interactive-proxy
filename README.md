@@ -2,6 +2,15 @@
 
 Interactive BOM weather map proxy for local browser use, Home Assistant dashboards, and kiosk-style displays.
 
+## Known-Good Release
+
+- Verified working release: `1.0.64`
+- Verified access paths:
+  - Home Assistant ingress / `Open Web UI`
+  - direct raw port access on `:8083`
+
+If you are debugging older behavior, first confirm the live response header is `X-BOM-Proxy-Version: 1.0.64`.
+
 ## What This Service Does
 
 - Proxies BOM web/API traffic to one local origin.
@@ -85,9 +94,9 @@ Use these on `/` (recommended) or `/map`.
 | `zoomStart` | integer (`0..20`) | none | Optional initial zoom stage before final zoom. |
 | `showFrameTime` | boolean | `1` | Shows frame counter and timestamp overlay. |
 | `showZoomStatus` | boolean | `1` | Shows "Applying map zoom..." while waiting for zoom settle when `zoom` is used. |
-| `showTownNames` | boolean | `0` | Enables town/city labels layer. |
-| `interactive` | boolean | `0` | Enables drag/pan interactions. |
-| `animate` | boolean | `0` | Enables timeline autoplay behavior. |
+| `showTownNames` | boolean | `1` | Enables town/city labels layer. |
+| `interactive` | boolean | `1` | Enables drag/pan interactions. |
+| `animate` | boolean | `1` | Enables timeline autoplay behavior. |
 | `animateMode` | `native` or `throttle` | `native` | Animation strategy (see below). |
 | `animateInterval` | integer ms (`500..30000`) | `2000` | Step interval used by `animateMode=throttle`. |
 | `frameSkip` | integer (`1..6`) | `1` | Frames advanced per throttle step. |
@@ -112,7 +121,9 @@ Runtime timezone defaults to `Australia/Melbourne` and can now be overridden wit
 - `rain=1`
 - `cleanup=1`
 - `showFrameTime=1` (unless `lowPower=1`)
-- `animate=0` (unless explicitly set)
+- `showTownNames=1`
+- `interactive=1`
+- `animate=1` (unless `lowPower=1` or explicitly disabled)
 
 ### What `lowPower` does
 
@@ -182,6 +193,7 @@ The add-on still exposes port `8083` by default:
 The add-on now supports Home Assistant ingress. That is the correct route if you want it to behave like built-in sidebar apps such as VS Code.
 
 - Open the add-on from the Home Assistant sidebar or add-on page.
+- `Open Web UI` should open the ingress route, not the raw `:8083` port.
 - If Home Assistant Cloud is enabled, ingress is the path that can be exposed through the Home Assistant UI.
 - Ingress keeps the app under Home Assistant auth instead of exposing a separate raw port.
 

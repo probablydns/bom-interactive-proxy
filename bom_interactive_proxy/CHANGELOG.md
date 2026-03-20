@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.64
+
+- Known-good release: Home Assistant ingress and direct `:8083` access are both verified working, including map animation and town labels.
+- Inject an absolute ingress asset origin into the local ArcGIS worker bootstrap, so blob-backed workers use full `http://.../api/hassio_ingress/...` chunk URLs instead of invalid path-only URLs.
+
+## 1.0.63
+
+- Inject the live ingress asset root into the local ArcGIS `RemoteClient.js` response and build worker chunk URLs from that explicit assets path instead of any blob or inferred public path.
+
+## 1.0.62
+
+- Resolve ArcGIS worker chunk URLs from the worker script location itself instead of webpack's derived public path, avoiding malformed ingress chunk URLs in `XMLHttpRequest.open(...)`.
+
+## 1.0.61
+
+- Replace the local ArcGIS worker chunk loader with a credentialed same-origin XHR path inside the bundled `RemoteClient.js`, so ingress workers can load secondary chunks without `importScripts(...)` auth failures.
+
+## 1.0.60
+
+- Serve a local pre-bundled ArcGIS `RemoteClient.js` under ingress so workers no longer depend on a second authenticated chunk bootstrap.
+- Remove the brittle upstream `RemoteClient.js` response rewriting path and refresh cache-busters to `20260320z`.
+
 ## 1.0.59
 
 - Remove the `$`-bearing regex syntax from the ingress worker chunk loader rewrite so Nginx parses the `sub_filter` replacement cleanly, and normalize worker chunk URLs with plain string operations instead.
@@ -25,27 +47,6 @@
 
 - Inject the corrected BOM asset root into `RemoteClient.js` itself so ArcGIS worker chunks resolve inside ingress, and use same-origin ingress paths for the page-side ESRI worker config.
 - Prefer the live `showTownNames` URL/referrer flag over stale cookie state when deciding whether to keep town labels enabled.
-
-## 1.0.64
-
-- Inject an absolute ingress asset origin into the local ArcGIS worker bootstrap, so blob-backed workers use full `http://.../api/hassio_ingress/...` chunk URLs instead of invalid path-only URLs.
-
-## 1.0.63
-
-- Inject the live ingress asset root into the local ArcGIS `RemoteClient.js` response and build worker chunk URLs from that explicit assets path instead of any blob or inferred public path.
-
-## 1.0.62
-
-- Resolve ArcGIS worker chunk URLs from the worker script location itself instead of webpack's derived public path, avoiding malformed ingress chunk URLs in `XMLHttpRequest.open(...)`.
-
-## 1.0.61
-
-- Replace the local ArcGIS worker chunk loader with a credentialed same-origin XHR path inside the bundled `RemoteClient.js`, so ingress workers can load secondary chunks without `importScripts(...)` auth failures.
-
-## 1.0.60
-
-- Serve a local pre-bundled ArcGIS `RemoteClient.js` under ingress so workers no longer depend on a second authenticated chunk bootstrap.
-- Remove the brittle upstream `RemoteClient.js` response rewriting path and refresh cache-busters to `20260320z`.
 
 ## 1.0.54
 

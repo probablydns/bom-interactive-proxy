@@ -1,124 +1,96 @@
-# 🐛 Troubleshooting BOM Interactive Proxy
+# Troubleshooting
 
-## Common Issues & Solutions
+## Known-Good Release
 
-### 1. Container Won't Start (nginx error)
+- Verified working release: `1.0.64`
+- Verified working access paths:
+  - Home Assistant ingress / `Open Web UI`
+  - direct raw port access on `:8083`
 
-**Error:** `"add_header" directive is not allowed here`
+If behavior does not match that release, confirm the live version first before debugging anything else.
 
-**Solution:** Fixed in v1.1.1+. Update to latest image:
+## Confirm The Live Version
+
+Direct port:
+
 ```bash
-docker pull ghcr.io/probablydns/bom-interactive-proxy:latest
-docker restart bom-proxy
+curl -I http://HOST:8083/health
 ```
 
-### 2. Port Mapping Issues  
+Ingress:
 
-**Correct port mapping:** Container exposes port 80 (not 8080)
 ```bash
-# ✅ Correct
+curl -I http://HOME_ASSISTANT_HOST:8123/api/hassio_ingress/TOKEN/
+```
+
+Look for:
+
+- `X-BOM-Proxy-Version: 1.0.64`
+
+If the header is older, you are still running an older build or cached add-on metadata.
+
+## Home Assistant Still Shows An Older Add-On Version
+
+1. Reload the add-on repositories in Home Assistant.
+2. If it still shows the old version, restart Home Assistant.
+3. If it still stays stale, remove and re-add the custom repository:
+   `https://github.com/probablydns/bom-interactive-proxy`
+
+## `Open Web UI` Opens `:8083` Instead Of Ingress
+
+That means Home Assistant is still using old add-on metadata. Update to the latest add-on version and reload add-on repositories. On the working metadata, `Open Web UI` opens the ingress route under `/api/hassio_ingress/...`.
+
+## Add-On Will Not Start
+
+Check the add-on logs first. The most useful startup failures are Nginx config errors.
+
+Examples:
+
+- `invalid variable name`
+- `sub_filter_once directive is duplicate`
+- `configuration file /etc/nginx/nginx.conf test failed`
+
+If you see one of those, the add-on did not boot cleanly and runtime behavior is not meaningful yet.
+
+## Ingress Does Not Match Direct `:8083`
+
+Working `1.0.64` behavior is:
+
+- ingress loads the full map
+- dragging works
+- place names are visible
+- radar animation runs
+
+If direct `:8083` works but ingress does not:
+
+1. Confirm the ingress page header is `X-BOM-Proxy-Version: 1.0.64`.
+2. Confirm `Open Web UI` opens ingress, not the raw port.
+3. Hard-refresh the ingress page after updating.
+
+## Direct `:8083` Check
+
+Useful direct test URL:
+
+```text
+http://HOST:8083/?place=ashburton&showFrameTime=1&animate=1&zoom=7&interactive=1
+```
+
+Useful ingress check:
+
+```text
+http://HOME_ASSISTANT_HOST:8123/app/13fa7b7e_bom_interactive_proxy
+```
+
+## Docker Checks
+
+```bash
+docker ps
+docker logs bom-interactive-proxy --tail 100
+curl http://localhost:8083/health
+```
+
+Correct port mapping is container `80` to host `8083`:
+
+```bash
 docker run -p 8083:80 ghcr.io/probablydns/bom-interactive-proxy:latest
-
-# ❌ Wrong 
-docker run -p 8083:8080 ghcr.io/probablydns/bom-interactive-proxy:latest
-```
-
-### 3. Connection Refused
-
-**Check if proxy is running:**
-```bash
-docker ps | grep bom-proxy
-curl http://localhost:8083/health
-```
-
-**Check logs:**
-```bash
-docker logs bom-proxy
-```
-
-### 4. CORS Errors in Browser
-
-**Symptoms:** Console errors about cross-origin requests
-
-**Check CORS headers:**
-```bash
-curl -I http://localhost:8083/health | grep -i cors
-# Should see: Access-Control-Allow-Origin: *
-```
-
-### 5. Map Not Loading
-
-**Test the proxy directly:**
-```bash
-# Download test page
-curl -O https://raw.githubusercontent.com/probablydns/bom-interactive-proxy/main/test-page.html
-# Open in browser
-```
-
-**Check BOM connectivity:**
-```bash
-curl -I http://localhost:8083/location/australia
-# Should get 200/301/302 response
-```
-
-### 6. Build Failures
-
-**If GitHub Actions build fails:**
-
-1. Check [Actions tab](https://github.com/probablydns/bom-interactive-proxy/actions)
-2. Look for red X indicators  
-3. Click on failed workflow to see logs
-4. Common issues:
-   - nginx config syntax errors
-   - Docker build context problems
-   - Missing files
-
-### 7. Home Assistant Integration
-
-**Card not loading:**
-1. Verify proxy is accessible from HA host
-2. Check HA logs for errors
-3. Test with standalone test page first
-4. Ensure card JavaScript is loaded correctly
-
-**iframe blocked:**
-- Check HA's `X-Frame-Options` settings
-- Verify CORS headers include `X-Frame-Options: ALLOWALL`
-
-## Quick Restart Commands
-
-```bash
-# Stop and remove container
-docker stop bom-proxy && docker rm bom-proxy
-
-# Pull latest and restart
-docker pull ghcr.io/probablydns/bom-interactive-proxy:latest
-docker run -d --name bom-proxy -p 8083:80 ghcr.io/probablydns/bom-interactive-proxy:latest
-
-# Check status
-curl http://localhost:8083/health
-```
-
-## Debug Information
-
-**Get container info:**
-```bash
-docker inspect bom-proxy
-docker logs bom-proxy --tail 50
-```
-
-**Test from inside container:**
-```bash
-docker exec -it bom-proxy sh
-curl localhost/health
-nginx -t  # Test config
-```
-
-**Network debugging:**
-```bash
-# Test from HA host
-curl -v http://HOME_ASSISTANT_HOST_OR_IP:8083/health
-
-# Check port binding
-netstat -tlnp | grep :8083
 ```

@@ -2,6 +2,13 @@
 
 Run BOM Interactive Proxy inside Home Assistant as a custom App/Add-on.
 
+Known-good release: `1.0.64`
+
+Verified working in Home Assistant:
+
+- ingress via `Open Web UI`
+- direct raw port access on `:8083`
+
 The app exposes:
 
 - `/` full-screen radar map (default)

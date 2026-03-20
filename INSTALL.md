@@ -2,6 +2,13 @@
 
 This guide covers Home Assistant and Docker deployment for BOM Interactive Proxy.
 
+## Known-Good Release
+
+- Verified working release: `1.0.64`
+- Verified working access paths:
+  - Home Assistant ingress / `Open Web UI`
+  - direct raw port access on `:8083`
+
 ## Home Assistant App/Add-on
 
 1. Open **Settings -> Add-ons (Apps) -> Add-on Store**.
@@ -19,6 +26,7 @@ Default URLs:
 Ingress:
 
 - Open the add-on from the Home Assistant sidebar or add-on page.
+- `Open Web UI` should open ingress.
 - Home Assistant Cloud access should use ingress rather than the raw port.
 - Set `display_timezone` in the add-on options if you want something other than `Australia/Melbourne`.
 
@@ -75,7 +83,7 @@ curl -f http://localhost:8083/health
 ## Test URLs
 
 - `http://HOST:8083/?place=melbourne`
-- `http://HOST:8083/?place=sydney&zoom=9&showFrameTime=1`
+- `http://HOST:8083/?place=sydney&zoom=9&showFrameTime=1&showTownNames=1&interactive=1&animate=1`
 - `http://HOST:8083/?place=melbourne&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1`
 - `http://HOST:8083/?coords=-37.8136,144.9631&zoom=10`
 - `http://HOST:8083/?path=australia/new-south-wales/metropolitan/bnsw_pt131-sydney&zoom=9`

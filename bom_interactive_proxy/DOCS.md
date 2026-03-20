@@ -1,5 +1,12 @@
 # BOM Interactive Proxy (Home Assistant App)
 
+## Known-Good Release
+
+- Verified working release: `1.0.64`
+- Verified working access paths:
+  - Home Assistant ingress / `Open Web UI`
+  - direct raw port access on `:8083`
+
 ## Install
 
 1. Open **Settings -> Add-ons (Apps) -> Add-on Store**.
@@ -14,6 +21,7 @@
 - Health check: `http://HOME_ASSISTANT_HOST:8083/health`
 - Test harness: `http://HOME_ASSISTANT_HOST:8083/test-harness`
 - Ingress: open the add-on from the Home Assistant sidebar or add-on page
+- `Open Web UI` should open the ingress route
 - Timezone option: set `display_timezone` in the add-on configuration to override the default `Australia/Melbourne`
 
 If port `8083` is in use, change it in app Network settings.
@@ -23,7 +31,7 @@ If port `8083` is in use, change it in app Network settings.
 - Full-screen radar:
   - `/?place=melbourne`
 - Frame/time + zoom:
-  - `/?place=sydney&showFrameTime=1&zoom=9`
+  - `/?place=sydney&showFrameTime=1&showTownNames=1&interactive=1&animate=1&zoom=9`
 - Throttled animation:
   - `/?place=melbourne&animate=1&animateMode=throttle&animateInterval=2500&frameSkip=1`
 - Coordinate lookup:
@@ -51,6 +59,7 @@ Ingress is preferred for the Home Assistant-native experience.
 ## Notes
 
 - Use `/` for new links; `/map-only` is kept only as a redirect.
+- `/` defaults to map-only radar mode with `showFrameTime=1`, `showTownNames=1`, `interactive=1`, and `animate=1` unless explicitly overridden or disabled by `lowPower=1`.
 - `lowPower=1` disables animation and frame-time overlay to reduce load.
 - `animateMode=native` uses BOM playback; `animateMode=throttle` steps frames at fixed intervals.
 - `rain` and `cleanup` are internal controls already enabled by default on `/`.
