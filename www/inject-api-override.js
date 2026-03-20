@@ -55,6 +55,16 @@
     return new URL(normalizedPath, window.location.origin + getAppBasePath()).toString();
   }
 
+  function buildAppPath(relativePath) {
+    var built = buildAppUrl(relativePath);
+    try {
+      var parsed = new URL(built, window.location.origin);
+      return parsed.pathname + parsed.search + parsed.hash;
+    } catch (_error) {
+      return built;
+    }
+  }
+
   function rewriteLocalAssetUrl(url) {
     var src = String(url || "");
     var appBasePath = getAppBasePath();
@@ -702,41 +712,89 @@
     return node;
   }
 
+  function applyDrupalSettingsOverrides(settings) {
+    var next = settings && typeof settings === "object" ? settings : {};
+
+    if (next.gtm) {
+      next.gtm.tagId = null;
+      next.gtm.tagIds = [];
+      next.gtm.settings = next.gtm.settings || {};
+      next.gtm.settings.include_classes = false;
+    }
+
+    if (next.gtag) {
+      next.gtag.tagId = "";
+      next.gtag.otherIds = [];
+      next.gtag.events = [];
+    }
+
+    if (next.bomRum) {
+      window.elasticApm = window.elasticApm || createApmStub();
+      next.bomRum.apmUrl = buildAppUrl("blocked-external/apm");
+      next.bomRum.active = false;
+      next.bomRum.enabled = false;
+      next.bomRum.transactionSampleRate = 0;
+      next.bomRum.eventsLimit = 0;
+    }
+
+    if (
+      next.bomStrings &&
+      next.bomStrings.apis &&
+      typeof next.bomStrings.apis === "object" &&
+      typeof next.bomStrings.apis.content_api === "string" &&
+      next.bomStrings.apis.content_api.indexOf("/api/v1") === 0
+    ) {
+      next.bomStrings.apis.content_api = buildAppPath("api/v1");
+    }
+
+    return next;
+  }
+
+  function syncDrupalSettingsFromElement(settingsElement) {
+    if (!settingsElement || settingsElement.type !== "application/json" || !settingsElement.textContent) {
+      return false;
+    }
+
+    try {
+      var parsed = JSON.parse(settingsElement.textContent);
+      var patched = applyDrupalSettingsOverrides(parsed);
+      window.drupalSettings = patched;
+      settingsElement.textContent = JSON.stringify(patched);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function bootstrapDrupalSettings() {
     try {
-      var settingsElement = document.querySelector(
-        "head > script[data-drupal-selector=drupal-settings-json], body > script[data-drupal-selector=drupal-settings-json]"
-      );
+      var selector =
+        "head > script[data-drupal-selector=drupal-settings-json], body > script[data-drupal-selector=drupal-settings-json]";
+      var settingsElement = document.querySelector(selector);
 
-      if (settingsElement && settingsElement.type === "application/json" && settingsElement.textContent) {
-        window.drupalSettings = JSON.parse(settingsElement.textContent);
-      } else {
-        window.drupalSettings = window.drupalSettings || {};
+      if (syncDrupalSettingsFromElement(settingsElement)) {
+        return;
       }
 
-      if (window.drupalSettings.gtm) {
-        window.drupalSettings.gtm.tagId = null;
-        window.drupalSettings.gtm.tagIds = [];
-        window.drupalSettings.gtm.settings = window.drupalSettings.gtm.settings || {};
-        window.drupalSettings.gtm.settings.include_classes = false;
-      }
+      window.drupalSettings = applyDrupalSettingsOverrides(window.drupalSettings || {});
 
-      if (window.drupalSettings.gtag) {
-        window.drupalSettings.gtag.tagId = "";
-        window.drupalSettings.gtag.otherIds = [];
-        window.drupalSettings.gtag.events = [];
-      }
+      var observer = new MutationObserver(function () {
+        var lateSettingsElement = document.querySelector(selector);
+        if (!lateSettingsElement) {
+          return;
+        }
 
-      if (window.drupalSettings.bomRum) {
-        window.elasticApm = window.elasticApm || createApmStub();
-        window.drupalSettings.bomRum.apmUrl = buildAppUrl("blocked-external/apm");
-        window.drupalSettings.bomRum.active = false;
-        window.drupalSettings.bomRum.enabled = false;
-        window.drupalSettings.bomRum.transactionSampleRate = 0;
-        window.drupalSettings.bomRum.eventsLimit = 0;
-      }
-    } catch (_error) {
-      window.drupalSettings = window.drupalSettings || {};
+        if (syncDrupalSettingsFromElement(lateSettingsElement)) {
+          observer.disconnect();
+        }
+      });
+
+      observer.observe(document.documentElement || document, {
+        childList: true,
+        subtree: true
+      });
+    } catch (_error2) {
+      window.drupalSettings = applyDrupalSettingsOverrides(window.drupalSettings || {});
     }
   }
 
