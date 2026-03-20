@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.59
+
+- Remove the `$`-bearing regex syntax from the ingress worker chunk loader rewrite so Nginx parses the `sub_filter` replacement cleanly, and normalize worker chunk URLs with plain string operations instead.
+- Drop the duplicate `text/html` MIME entry from the ingress `sub_filter_types` list to suppress the startup warning.
+- Refresh ingress cache markers to `20260320y`.
+
 ## 1.0.58
 
 - Replace the worker-side `new URL(...)` chunk normalization with plain string-based resolution against the live worker script URL, so ingress worker chunk fetches no longer depend on URL constructor behavior inside the worker runtime.
