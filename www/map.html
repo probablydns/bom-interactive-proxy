@@ -177,6 +177,8 @@
                 this.zoomRevealDeadline = 0;
                 this.zoomRevealMaxWaitMs = 20000;
                 this.zoomRevealPollTimer = null;
+                this.mapHostNudgeAttempts = 0;
+                this.mapHostLastNudgeAt = 0;
                 this.init();
             }
 
@@ -357,7 +359,7 @@
                     if (this.showTownNames) {
                         locationParams.set('showTownNames', '1');
                     }
-                    locationParams.set('_proxyv', '20260320k');
+                    locationParams.set('_proxyv', '20260320l');
                     const bomUrl = this.buildAppUrl(`location/${bomPath}?${locationParams.toString()}`);
                     
                     console.log('Loading BOM map from:', bomUrl);
@@ -1617,6 +1619,7 @@
                         }
 
                         mapRoot = this.findMapRoot(frameDoc);
+                        this.maybeNudgeMapHostIntoView(frameDoc, mapRoot);
 
                         if (this.forceRain && !this.rainTabActivated) {
                             this.rainTabActivationAttempts += 1;
@@ -1755,6 +1758,50 @@
                         '.esri-view-root, .esri-view, .esri-view-surface, .mapboxgl-map, .leaflet-container, .ol-viewport, canvas, svg, [class*="map-view"], [class*="map-canvas"]'
                     )
                 );
+            }
+
+            maybeNudgeMapHostIntoView(doc, mapRoot = null) {
+                if (!this.mapOnlyEnabled || !doc) {
+                    return false;
+                }
+
+                if (this.findStrictMapRoot(doc)) {
+                    return false;
+                }
+
+                if (this.cleanupAttempts < 2 || this.mapHostNudgeAttempts >= 8) {
+                    return false;
+                }
+
+                const now = Date.now();
+                if (this.mapHostLastNudgeAt && now - this.mapHostLastNudgeAt < 1000) {
+                    return false;
+                }
+
+                const host = mapRoot || this.findMapHostRoot(doc);
+                if (!host || typeof host.scrollIntoView !== 'function') {
+                    return false;
+                }
+
+                try {
+                    host.scrollIntoView({
+                        block: 'center',
+                        inline: 'nearest',
+                        behavior: 'auto'
+                    });
+
+                    const frameWin = doc.defaultView || this.frame.contentWindow;
+                    if (frameWin && typeof frameWin.dispatchEvent === 'function') {
+                        frameWin.dispatchEvent(new Event('scroll'));
+                        frameWin.dispatchEvent(new Event('resize'));
+                    }
+
+                    this.mapHostNudgeAttempts += 1;
+                    this.mapHostLastNudgeAt = now;
+                    return true;
+                } catch (error) {
+                    return false;
+                }
             }
 
             findMapRoot(doc) {
