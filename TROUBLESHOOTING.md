@@ -2,7 +2,7 @@
 
 ## Known-Good Release
 
-- Verified working release: `1.0.65`
+- Verified working release: `1.0.66`
 - Verified working access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
@@ -25,7 +25,7 @@ curl -I http://HOME_ASSISTANT_HOST:8123/api/hassio_ingress/TOKEN/
 
 Look for:
 
-- `X-BOM-Proxy-Version: 1.0.65`
+- `X-BOM-Proxy-Version: 1.0.66`
 
 If the header is older, you are still running an older build or cached add-on metadata.
 
@@ -54,7 +54,7 @@ If you see one of those, the add-on did not boot cleanly and runtime behavior is
 
 ## Ingress Does Not Match Direct `:8083`
 
-Working `1.0.65` behavior is:
+Working `1.0.66` behavior is:
 
 - ingress loads the full map
 - dragging works
@@ -63,7 +63,7 @@ Working `1.0.65` behavior is:
 
 If direct `:8083` works but ingress does not:
 
-1. Confirm the ingress page header is `X-BOM-Proxy-Version: 1.0.65`.
+1. Confirm the ingress page header is `X-BOM-Proxy-Version: 1.0.66`.
 2. Confirm `Open Web UI` opens ingress, not the raw port.
 3. Hard-refresh the ingress page after updating.
 

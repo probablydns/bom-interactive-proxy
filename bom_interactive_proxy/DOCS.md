@@ -2,7 +2,7 @@
 
 ## Known-Good Release
 
-- Verified working release: `1.0.65`
+- Verified working release: `1.0.66`
 - Verified working access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
@@ -78,6 +78,7 @@ zoom: 9
 ```
 
 Leave `base_path` blank to let the card resolve the live add-on ingress URL automatically. That keeps the iframe on `/api/hassio_ingress/...` instead of the Home Assistant panel wrapper.
+If your add-on uses a different Home Assistant add-on ID than `13fa7b7e_bom_interactive_proxy`, set `addon_slug` on the card.
 
 ## Notes
 

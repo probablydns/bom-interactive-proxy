@@ -4,12 +4,12 @@ Interactive BOM weather map proxy for local browser use, Home Assistant dashboar
 
 ## Known-Good Release
 
-- Verified working release: `1.0.65`
+- Verified working release: `1.0.66`
 - Verified access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
 
-If you are debugging older behavior, first confirm the live response header is `X-BOM-Proxy-Version: 1.0.65`.
+If you are debugging older behavior, first confirm the live response header is `X-BOM-Proxy-Version: 1.0.66`.
 
 ## What This Service Does
 
@@ -223,6 +223,7 @@ zoom: 9
 The visual editor keeps a local draft while typing and only refreshes the preview after a field loses focus or a select changes.
 
 If `base_path` is left blank, the card now resolves the live add-on ingress URL and prefers `/api/hassio_ingress/...`, which avoids the Home Assistant hamburger/header inside the iframe. If you explicitly set `base_path: /app/13fa7b7e_bom_interactive_proxy`, you are embedding the Home Assistant panel route and will see Home Assistant chrome.
+If your add-on was installed from a fork or local repository with a different Home Assistant add-on ID, set `addon_slug` on the card so Supervisor lookup does not fall back to the panel route.
 
 ### `cloudflared` add-on
 

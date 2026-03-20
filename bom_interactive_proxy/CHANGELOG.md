@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.66
+
+- Fix bundled card ingress auto-resolution by looking up the add-on with the full Home Assistant add-on ID (`13fa7b7e_bom_interactive_proxy`) instead of the plain internal slug.
+- Try multiple add-on ID candidates during Supervisor lookup and expose `addon_slug` as an override for forks or local repositories, so the card no longer silently falls back to the `/app/...` panel route in common installs.
+
 ## 1.0.65
 
 - Prefer the live add-on ingress URL in the bundled `BOM Interactive Proxy Card`, so iframe embeds can show the ingress-backed app without Home Assistant chrome when `base_path` is left blank.
