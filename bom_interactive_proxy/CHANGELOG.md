@@ -26,6 +26,10 @@
 - Inject the corrected BOM asset root into `RemoteClient.js` itself so ArcGIS worker chunks resolve inside ingress, and use same-origin ingress paths for the page-side ESRI worker config.
 - Prefer the live `showTownNames` URL/referrer flag over stale cookie state when deciding whether to keep town labels enabled.
 
+## 1.0.62
+
+- Resolve ArcGIS worker chunk URLs from the worker script location itself instead of webpack's derived public path, avoiding malformed ingress chunk URLs in `XMLHttpRequest.open(...)`.
+
 ## 1.0.61
 
 - Replace the local ArcGIS worker chunk loader with a credentialed same-origin XHR path inside the bundled `RemoteClient.js`, so ingress workers can load secondary chunks without `importScripts(...)` auth failures.
