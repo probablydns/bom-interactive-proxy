@@ -196,6 +196,7 @@ The add-on now supports Home Assistant ingress. That is the correct route if you
 - Open the add-on from the Home Assistant sidebar or add-on page.
 - `Open Web UI` should open the ingress route, not the raw `:8083` port.
 - The runtime and custom card also support the stable Home Assistant panel path `/app/13fa7b7e_bom_interactive_proxy`.
+- The raw ingress endpoint under `/api/hassio_ingress/...` is what you want for iframe embedding if you do not want Home Assistant chrome inside the frame.
 - If Home Assistant Cloud is enabled, ingress is the path that can be exposed through the Home Assistant UI.
 - Ingress keeps the app under Home Assistant auth instead of exposing a separate raw port.
 
@@ -215,12 +216,13 @@ Then add the card:
 
 ```yaml
 type: custom:bom-interactive-proxy-card
-base_path: /app/13fa7b7e_bom_interactive_proxy
 place: melbourne
 zoom: 9
 ```
 
 The visual editor keeps a local draft while typing and only refreshes the preview after a field loses focus or a select changes.
+
+If `base_path` is left blank, the card now resolves the live add-on ingress URL and prefers `/api/hassio_ingress/...`, which avoids the Home Assistant hamburger/header inside the iframe. If you explicitly set `base_path: /app/13fa7b7e_bom_interactive_proxy`, you are embedding the Home Assistant panel route and will see Home Assistant chrome.
 
 ### `cloudflared` add-on
 

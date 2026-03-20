@@ -2,6 +2,7 @@
   "use strict";
 
   var DEFAULT_BASE_PATH = "/app/13fa7b7e_bom_interactive_proxy";
+  var DEFAULT_ADDON_SLUG = "bom_interactive_proxy";
   var DEFAULT_PLACE = "melbourne";
   var DEFAULT_ASPECT_RATIO = "16:9";
   var CARD_TYPE = "custom:bom-interactive-proxy-card";
@@ -12,7 +13,7 @@
       window.customCards.push({
         type: CARD_TYPE,
         name: "BOM Interactive Proxy Card",
-        description: "Embeds the BOM Interactive Proxy map using a stable Home Assistant app path or direct URL."
+        description: "Embeds the BOM Interactive Proxy map using add-on ingress or a direct URL."
       });
     }
   }
@@ -69,7 +70,10 @@
   }
 
   function normalizeBasePath(value) {
-    var basePath = normalizeText(value) || DEFAULT_BASE_PATH;
+    var basePath = normalizeText(value);
+    if (!basePath) {
+      return "";
+    }
 
     try {
       var url = new URL(basePath, window.location.origin);
@@ -83,6 +87,58 @@
     }
   }
 
+  function configuredBasePath(config) {
+    return normalizeBasePath(config.base_path || config.base_url);
+  }
+
+  function defaultPanelBasePath(config) {
+    return normalizeBasePath(config.ingress_path || config.panel_path || DEFAULT_BASE_PATH);
+  }
+
+  function unpackApiPayload(payload) {
+    if (payload && typeof payload === "object" && payload.data && typeof payload.data === "object") {
+      return payload.data;
+    }
+    return payload && typeof payload === "object" ? payload : {};
+  }
+
+  function extractIngressBaseUrl(payload) {
+    var info = unpackApiPayload(payload);
+    if (!info || (!info.ingress && !info.ingress_panel)) {
+      return "";
+    }
+
+    return normalizeBasePath(info.ingress_url || info.ingress_entry);
+  }
+
+  function addonSlug(config) {
+    return normalizeText(config.addon_slug) || DEFAULT_ADDON_SLUG;
+  }
+
+  async function fetchAddonInfo(hass, slug) {
+    if (!hass || typeof hass.callApi !== "function" || !slug) {
+      return null;
+    }
+
+    var endpoints = [
+      "hassio/addons/" + encodeURIComponent(slug) + "/info",
+      "supervisor/addons/" + encodeURIComponent(slug) + "/info"
+    ];
+
+    for (var i = 0; i < endpoints.length; i += 1) {
+      try {
+        var payload = await hass.callApi("GET", endpoints[i]);
+        if (payload) {
+          return payload;
+        }
+      } catch (_error) {
+        // Try the next supervisor proxy endpoint.
+      }
+    }
+
+    return null;
+  }
+
   function setQueryBoolean(params, key, value) {
     if (value === undefined) {
       return;
@@ -90,8 +146,13 @@
     params.set(key, value ? "1" : "0");
   }
 
-  function buildCardUrl(config) {
-    var baseUrl = new URL(normalizeBasePath(config.base_path), window.location.origin);
+  function buildCardUrl(config, basePathOverride) {
+    var resolvedBasePath = normalizeBasePath(basePathOverride || config.base_path || config.base_url);
+    if (!resolvedBasePath) {
+      return "";
+    }
+
+    var baseUrl = new URL(resolvedBasePath, window.location.origin);
     var params = new URLSearchParams(baseUrl.search);
 
     var locationPath = normalizeText(config.path);
@@ -183,6 +244,10 @@
       this._cardEl = null;
       this._frameShell = null;
       this._iframe = null;
+      this._resolvedBasePath = "";
+      this._resolvingIngress = false;
+      this._ingressResolved = false;
+      this._ingressRequestId = 0;
     }
 
     static getConfigElement() {
@@ -192,7 +257,6 @@
     static getStubConfig() {
       return {
         type: CARD_TYPE,
-        base_path: DEFAULT_BASE_PATH,
         place: DEFAULT_PLACE
       };
     }
@@ -203,7 +267,20 @@
       }
 
       this._config = cleanConfig(config);
+      this._ingressRequestId += 1;
+      this._resolvingIngress = false;
+      this._resolvedBasePath = configuredBasePath(this._config);
+      this._ingressResolved = Boolean(this._resolvedBasePath);
+      this._ensureResolvedBasePath();
       this._render();
+    }
+
+    set hass(hass) {
+      this._hass = hass;
+      this._ensureResolvedBasePath();
+      if (!this.shadowRoot.innerHTML) {
+        this._render();
+      }
     }
 
     getCardSize() {
@@ -211,6 +288,35 @@
     }
 
     connectedCallback() {
+      this._ensureResolvedBasePath();
+      this._render();
+    }
+
+    async _ensureResolvedBasePath() {
+      var configured = configuredBasePath(this._config);
+      if (configured) {
+        this._resolvedBasePath = configured;
+        this._ingressResolved = true;
+        this._resolvingIngress = false;
+        return;
+      }
+
+      if (this._ingressResolved || this._resolvingIngress || !this._hass) {
+        return;
+      }
+
+      var requestId = ++this._ingressRequestId;
+      this._resolvingIngress = true;
+      this._render();
+
+      var payload = await fetchAddonInfo(this._hass, addonSlug(this._config));
+      if (requestId !== this._ingressRequestId) {
+        return;
+      }
+
+      this._resolvedBasePath = extractIngressBaseUrl(payload) || defaultPanelBasePath(this._config);
+      this._ingressResolved = true;
+      this._resolvingIngress = false;
       this._render();
     }
 
@@ -221,7 +327,7 @@
 
       var config = Object.assign({}, BOMInteractiveProxyCard.getStubConfig(), this._config || {});
       var cardTitle = normalizeText(config.title);
-      var src = buildCardUrl(config);
+      var src = buildCardUrl(config, this._resolvedBasePath);
       var aspectRatio = parseAspectRatio(config.aspect_ratio);
 
       if (!this._cardEl || !this._frameShell || !this._iframe) {
@@ -250,6 +356,11 @@
         this._cardEl.setAttribute("header", cardTitle);
       } else {
         this._cardEl.removeAttribute("header");
+      }
+
+      if (!src) {
+        this._iframe.removeAttribute("src");
+        return;
       }
 
       if (this._iframe.getAttribute("src") !== src) {
@@ -282,7 +393,7 @@
         return;
       }
 
-      var draft = Object.assign({ base_path: DEFAULT_BASE_PATH }, this._draft || {});
+      var draft = Object.assign({}, this._draft || {});
 
       this.shadowRoot.innerHTML = [
         "<style>",
@@ -293,10 +404,10 @@
         ".full{grid-column:1 / -1;}",
         ".hint{margin:0 0 12px;color:var(--secondary-text-color);font-size:12px;line-height:1.4;}",
         "</style>",
-        "<p class=\"hint\">Draft values stay local while typing. The preview refreshes only after leaving a field or changing a select.</p>",
+        "<p class=\"hint\">Leave Base path blank to use the live add-on ingress automatically. That prefers /api/hassio_ingress/... so the iframe does not show the Home Assistant menu/header. Set /app/13fa7b7e_bom_interactive_proxy only if you want the HA panel wrapper.</p>",
         "<div class=\"grid\">",
         this._textField("Title", "title", draft.title, "Optional card header"),
-        this._textField("Base path", "base_path", draft.base_path, "Use /app/13fa7b7e_bom_interactive_proxy for a stable Home Assistant route", "full"),
+        this._textField("Base path", "base_path", draft.base_path, "Leave blank for add-on ingress, or set a direct proxy root", "full"),
         this._textField("Place", "place", draft.place, "Example: melbourne"),
         this._textField("Path", "path", draft.path, "Full BOM path overrides place/coords"),
         this._textField("Coords", "coords", draft.coords, "lat,lon"),
