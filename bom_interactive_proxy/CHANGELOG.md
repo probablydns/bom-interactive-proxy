@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.58
+
+- Replace the worker-side `new URL(...)` chunk normalization with plain string-based resolution against the live worker script URL, so ingress worker chunk fetches no longer depend on URL constructor behavior inside the worker runtime.
+- Refresh ingress cache markers to `20260320x`.
+
 ## 1.0.57
 
 - Normalize ArcGIS worker chunk URLs against the live `RemoteClient.js` ingress URL before loading them, so credentialed chunk fetches no longer fail with `XMLHttpRequest.open(...): Invalid URL`.
