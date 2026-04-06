@@ -1586,9 +1586,10 @@
 
                 this.maybeRevealMapFrameAfterZoom();
 
-                // Focus the frame for interactions
+                // Focus the frame for interactions (preventScroll avoids
+                // scrolling ancestor frames like the HA dashboard).
                 setTimeout(() => {
-                    this.frame.focus();
+                    this.frame.focus({ preventScroll: true });
                 }, 100);
             }
 
@@ -1822,7 +1823,10 @@
                 try {
                     const frameWin = doc.defaultView || this.frame.contentWindow;
                     const scrollingElement = doc.scrollingElement || doc.documentElement || doc.body;
-                    if (typeof host.scrollIntoView === 'function') {
+                    // Only use scrollIntoView when NOT embedded in an iframe — it
+                    // propagates scroll to ALL ancestor frames including the host
+                    // dashboard, which causes the page to jump.
+                    if (typeof host.scrollIntoView === 'function' && window.parent === window) {
                         try {
                             host.scrollIntoView({ block: 'center', inline: 'nearest' });
                         } catch (error) {
