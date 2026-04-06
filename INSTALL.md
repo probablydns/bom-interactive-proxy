@@ -4,7 +4,7 @@ This guide covers Home Assistant and Docker deployment for BOM Interactive Proxy
 
 ## Known-Good Release
 
-- Verified working release: `1.0.64`
+- Verified working release: `1.0.67`
 - Verified working access paths:
   - Home Assistant ingress / `Open Web UI`
   - direct raw port access on `:8083`
