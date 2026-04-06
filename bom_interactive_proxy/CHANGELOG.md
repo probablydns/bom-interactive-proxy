@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.68
+
+- Prevent the embedded BOM map from scrolling the parent Home Assistant dashboard to the top of the page during map initialisation.
+- Skip `scrollIntoView()` when running inside an iframe to stop scroll propagation through ancestor frames.
+- Use `focus({ preventScroll: true })` on the inner map frame to avoid focus-induced dashboard scrolling.
+- Fix version header mismatch: all `X-BOM-Proxy-Version` response headers now report `1.0.68`.
+
 ## 1.0.67
 
 - Resolve add-on ingress through Home Assistant's `supervisor/api` websocket endpoint instead of the plain REST proxy, so Lovelace cards can access the non-admin-safe add-on info path that exposes `ingress_entry` and `ingress_url`.
